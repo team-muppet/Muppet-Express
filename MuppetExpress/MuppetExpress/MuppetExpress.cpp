@@ -23,7 +23,6 @@ int main() {
 
 	server.Use([](Request& req, Response& res, std::function<void()> next) {
 		std::cout << "Before:" << res.result() << std::endl;
-		return;
 		next();
 		std::cout << "After:" << res.result() << std::endl;
 		});

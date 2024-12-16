@@ -10,6 +10,7 @@
 #include <vector>
 #include <thread>
 #include "Router.hpp"
+#include "MiddlewareManager.hpp"
 
 #include "MuppetExpressDefinitions.hpp"
 
@@ -67,6 +68,11 @@ namespace MuppetExpress {
 			return *this;
 		}
 
+		Server& Use(Middleware mw) {
+			_middlewareManager.addMiddleware(std::move(mw));
+			return *this;
+		}
+
 		void RunServer()
 		{
 			try {
@@ -105,6 +111,7 @@ namespace MuppetExpress {
 	private:
 
 		Router router;
+		MiddlewareManager _middlewareManager;
 
 		// Handle an HTTP request
 		net::awaitable<void> handle_request(tcp::socket socket) {
@@ -118,16 +125,21 @@ namespace MuppetExpress {
 
 				auto optionalHandler = router.resolve(req.method(), req.target());
 
-				// Handle the request
-				if (optionalHandler) {
-					auto& handler = optionalHandler.value();
-					handler(req, res);
-				}
-				else {
-					res.result(http::status::not_found);
-					res.set(http::field::content_type, "text/plain");
-					res.body() = "404 Not Found";
-				}
+				// Make an endpoint handler function
+				std::function<void()> routeHandler = [&]() {
+					if (optionalHandler) {
+						auto& handler = optionalHandler.value();
+						handler(req, res);
+					}
+					else {
+						res.result(http::status::not_found);
+						res.set(http::field::content_type, "text/plain");
+						res.body() = "404 Not Found";
+					}
+				};
+
+				// Handle request with middleware
+				_middlewareManager.runChain(req, res, routeHandler);
 
 				res.prepare_payload();
 

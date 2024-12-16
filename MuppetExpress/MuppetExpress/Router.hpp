@@ -2,87 +2,159 @@
 
 #include <boost/beast.hpp>
 #include <boost/asio.hpp>
-#include <boost/asio/awaitable.hpp>
-#include <boost/asio/co_spawn.hpp>
-#include <boost/asio/detached.hpp>
-#include <boost/asio/use_awaitable.hpp>
-#include <iostream>
-#include <vector>
-#include <thread>
+#include <unordered_map>
+#include <string>
+#include <memory>
+#include <optional>
 
 #include "MuppetExpressDefinitions.hpp"
 
 namespace MuppetExpress {
 
-	class Router {
-	public:
-		void registerHandler(http::verb method, const std::string_view& path, Handler handler) {
-			auto node = root;
-			size_t start = 0;
-			size_t end = 0;
+    class Router {
+    public:
+        // Register a handler for a path. Path can contain parameter segments like "/users/:id"
+        void registerHandler(http::verb method, const std::string_view& path, Handler handler) {
+            auto node = traversePathToAddNodes(path);
+            node->handlers[method] = std::move(handler);
+        }
 
-			while ((end = path.find('/', start)) != std::string_view::npos) {
-				std::string_view segment = path.substr(start, end - start);
-				if (!segment.empty()) {
-					if (node->children.find(segment) == node->children.end()) {
-						node->children[segment] = std::make_shared<TrieNode>();
-					}
-					node = node->children[segment];
-				}
-				start = end + 1;
-			}
+        // Resolve a path and return a handler along with extracted parameters if it matches
+        std::optional<std::pair<Handler, std::unordered_map<std::string, std::string>>>
+            resolve(http::verb method, const std::string_view& path) {
+            std::unordered_map<std::string, std::string> params;
+            auto node = traversePathForLookup(path, params);
+            if (!node) return std::nullopt;
 
-			std::string_view lastSegment = path.substr(start);
+            if (auto it = node->handlers.find(method); it != node->handlers.end()) {
+                return std::make_pair(it->second, std::move(params));
+            }
+            return std::nullopt;
+        }
 
-			if (!lastSegment.empty()) {
-				if (node->children.find(lastSegment) == node->children.end()) {
-					node->children[lastSegment] = std::make_shared<TrieNode>();
-				}
-				node = node->children[lastSegment];
-			}
+    private:
+        // Hash and equality functors to support heterogeneous lookup.
+        struct StringViewHash {
+            using is_transparent = void;
+            std::size_t operator()(std::string_view sv) const noexcept {
+                return std::hash<std::string_view>{}(sv);
+            }
+            std::size_t operator()(const std::string& s) const noexcept {
+                return std::hash<std::string_view>{}(s);
+            }
+        };
 
-			node->handlers[method] = handler;
-		}
+        struct StringViewEqual {
+            using is_transparent = void;
+            bool operator()(std::string_view lhs, std::string_view rhs) const noexcept {
+                return lhs == rhs;
+            }
+            bool operator()(const std::string& lhs, const std::string& rhs) const noexcept {
+                return lhs == rhs;
+            }
+            bool operator()(std::string_view lhs, const std::string& rhs) const noexcept {
+                return lhs == rhs;
+            }
+            bool operator()(const std::string& lhs, std::string_view rhs) const noexcept {
+                return lhs == rhs;
+            }
+        };
 
-		std::optional<Handler> resolve(http::verb method, const std::string_view& path) {
-			auto node = root;
-			size_t start = 0;
-			size_t end = 0;
+        struct TrieNode {
+            // Children with literal segments
+            std::unordered_map<std::string, std::shared_ptr<TrieNode>, StringViewHash, StringViewEqual> children;
 
-			while ((end = path.find('/', start)) != std::string_view::npos) {
-				std::string_view segment = path.substr(start, end - start);
-				if (!segment.empty() && node->children.find(segment) != node->children.end()) {
-					node = node->children[segment];
-				}
-				start = end + 1;
-			}
+            // Optional parameter node. If this is set, this node will match any one segment and record its value.
+            std::shared_ptr<TrieNode> paramChild;
+            std::string paramName; // Name of the parameter if paramChild is used.
 
-			std::string_view lastSegment = path.substr(start);
+            std::unordered_map<http::verb, Handler> handlers;
+        };
 
-			if (!lastSegment.empty() && node->children.find(lastSegment) != node->children.end()) {
-				node = node->children[lastSegment];
+        std::shared_ptr<TrieNode> root = std::make_shared<TrieNode>();
 
-				if (node->handlers.find(method) != node->handlers.end())
-				{
-					return node->handlers[method];
-				}
-			}
+        // Modified traversePath for registration
+        // If a segment starts with ":", it's a parameter segment.
+        std::shared_ptr<TrieNode> traversePathToAddNodes(const std::string_view& path) {
+            auto node = root;
+            size_t start = 0;
 
-			if (lastSegment.empty() && node->handlers.find(method) != node->handlers.end())
-			{
-				return node->handlers[method];
-			}
+            while (start < path.size()) {
+                size_t end = path.find('/', start);
+                if (end == std::string_view::npos) {
+                    end = path.size();
+                }
 
-			return std::nullopt;
-		}
-	private:
+                std::string_view segment(path.data() + start, end - start);
 
-		struct TrieNode {
-			std::unordered_map<std::string_view, std::shared_ptr<TrieNode>> children;
-			std::unordered_map<http::verb, Handler> handlers;
-			/*Signal signal*/
-		};
+                if (!segment.empty()) {
+                    if (segment.front() == '{' && segment.back() == '}') {
+                        // Parameter segment
+                        // Use the paramChild if it exists, otherwise create it
+                        if (!node->paramChild) {
+                            node->paramChild = std::make_shared<TrieNode>();
+                            node->paramChild->paramName = std::string(segment.substr(1, segment.size() - 1));
+                        }
+                        node = node->paramChild;
+                    }
+                    else {
+                        // Literal segment
+                        auto it = node->children.find(segment);
+                        if (it == node->children.end()) {
+                            auto newNode = std::make_shared<TrieNode>();
+                            node->children.emplace(std::string(segment), newNode);
+                            node = newNode;
+                        }
+                        else {
+                            node = it->second;
+                        }
+                    }
+                }
 
-		std::shared_ptr<TrieNode> root = std::make_shared<TrieNode>();
-	};
-};
+                start = end + 1;
+            }
+
+            return node;
+        }
+
+        // Modified traverse for lookup.
+        // This time we attempt to match either a literal child or the paramChild.
+        // If paramChild matches, we record the segment in params.
+        std::shared_ptr<TrieNode> traversePathForLookup(const std::string_view& path,
+            std::unordered_map<std::string, std::string>& params) const {
+            auto node = root;
+            size_t start = 0;
+
+            while (start < path.size()) {
+                size_t end = path.find('/', start);
+                if (end == std::string_view::npos) {
+                    end = path.size();
+                }
+
+                std::string_view segment(path.data() + start, end - start);
+
+                if (!segment.empty()) {
+                    // Try literal match first
+                    auto it = node->children.find(segment);
+                    if (it != node->children.end()) {
+                        node = it->second;
+                    }
+                    else if (node->paramChild) {
+                        // Parameter match
+                        node = node->paramChild;
+                        params[node->paramName] = segment;
+                    }
+                    else {
+                        // No match
+                        return nullptr;
+                    }
+                }
+
+                start = end + 1;
+            }
+
+            return node;
+        }
+    };
+
+} // namespace MuppetExpress

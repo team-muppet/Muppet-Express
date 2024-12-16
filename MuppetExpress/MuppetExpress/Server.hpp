@@ -120,7 +120,7 @@ namespace MuppetExpress {
 
 				// Handle the request
 				if (optionalHandler) {
-					auto& handler = optionalHandler.value();
+					auto& handler = optionalHandler.value().first;
 					handler(req, res);
 				}
 				else {

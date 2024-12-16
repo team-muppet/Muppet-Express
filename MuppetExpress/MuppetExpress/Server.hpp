@@ -9,6 +9,9 @@
 #include <iostream>
 #include <vector>
 #include <thread>
+#include "Router.hpp"
+
+#include "MuppetExpressDefinitions.hpp"
 
 /*
 const express = require('express')
@@ -25,40 +28,42 @@ app.listen(port, () => {
 */
 
 namespace MuppetExpress {
-	namespace beast = boost::beast;
-	namespace http = beast::http;
-	namespace net = boost::asio;
-	using tcp = net::ip::tcp;
-	using MuppetHandler = std::function<void(http::request<http::string_body>& request, http::response<http::string_body>& response)>;
-
 	class Server
 	{
 	public:
-		Server() {
+		Server(std::variant<std::string, int> portnumber) {
 
+			if (holds_alternative<int>(portnumber))
+			{
+				std::cout << get<int>(portnumber) << std::endl;
+			}
+			else
+			{
+				std::cout <<  get<std::string>(portnumber) << std::endl;
+			}
 		}
 
-		Server& MapGet(const std::string_view& path, MuppetHandler handler)
+		Server& MapGet(const std::string_view& path, Handler handler)
 		{
-			registerHandler(http::verb::get, path, handler);
+			router.registerHandler(http::verb::get, path, handler);
 			return *this;
 		}
 
-		Server& MapPost(const std::string_view path, MuppetHandler handler)
+		Server& MapPost(const std::string_view path, Handler handler)
 		{
-			registerHandler(http::verb::post, path, handler);
+			router.registerHandler(http::verb::post, path, handler);
 			return *this;
 		}
 
-		Server& MapPut(const std::string_view path, MuppetHandler handler)
+		Server& MapPut(const std::string_view path, Handler handler)
 		{
-			registerHandler(http::verb::put, path, handler);
+			router.registerHandler(http::verb::put, path, handler);
 			return *this;
 		}
 
-		Server& MapDelete(const std::string_view path, MuppetHandler handler)
+		Server& MapDelete(const std::string_view path, Handler handler)
 		{
-			registerHandler(http::verb::delete_, path, handler);
+			router.registerHandler(http::verb::delete_, path, handler);
 			return *this;
 		}
 
@@ -99,72 +104,7 @@ namespace MuppetExpress {
 
 	private:
 
-		struct TrieNode {
-			std::unordered_map<std::string_view, std::shared_ptr<TrieNode>> children;
-			std::unordered_map<http::verb, MuppetHandler> handlers;
-		};
-
-		std::shared_ptr<TrieNode> root = std::make_shared<TrieNode>();
-
-		void registerHandler(http::verb method, const std::string_view& path, MuppetHandler handler) {
-			auto node = root;
-			size_t start = 0;
-			size_t end = 0;
-
-			while ((end = path.find('/', start)) != std::string_view::npos) {
-				std::string_view segment = path.substr(start, end - start);
-				if (!segment.empty()) {
-					if (node->children.find(segment) == node->children.end()) {
-						node->children[segment] = std::make_shared<TrieNode>();
-					}
-					node = node->children[segment];
-				}
-				start = end + 1;
-			}
-
-			std::string_view lastSegment = path.substr(start);
-
-			if (!lastSegment.empty()) {
-				if (node->children.find(lastSegment) == node->children.end()) {
-					node->children[lastSegment] = std::make_shared<TrieNode>();
-				}
-				node = node->children[lastSegment];
-			}
-
-			node->handlers[method] = handler;
-		}
-
-		std::optional<MuppetHandler> resolve(http::verb method, const std::string_view& path) {
-			auto node = root;
-			size_t start = 0;
-			size_t end = 0;
-
-			while ((end = path.find('/', start)) != std::string_view::npos) {
-				std::string_view segment = path.substr(start, end - start);
-				if (!segment.empty() && node->children.find(segment) != node->children.end()) {
-					node = node->children[segment];
-				}
-				start = end + 1;
-			}
-
-			std::string_view lastSegment = path.substr(start);
-
-			if (!lastSegment.empty() && node->children.find(lastSegment) != node->children.end()) {
-				node = node->children[lastSegment];
-
-				if (node->handlers.find(method) != node->handlers.end())
-				{
-					return node->handlers[method];
-				}
-			}
-
-			if (lastSegment.empty() && node->handlers.find(method) != node->handlers.end())
-			{
-				return node->handlers[method];
-			}
-
-			return std::nullopt;
-		}
+		Router router;
 
 		// Handle an HTTP request
 		net::awaitable<void> handle_request(tcp::socket socket) {
@@ -176,7 +116,7 @@ namespace MuppetExpress {
 				// Read the HTTP request
 				co_await http::async_read(socket, buffer, req, net::use_awaitable);
 
-				auto optionalHandler = resolve(req.method(), req.target());
+				auto optionalHandler = router.resolve(req.method(), req.target());
 
 				// Handle the request
 				if (optionalHandler) {

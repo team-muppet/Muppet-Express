@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\MuppetExpress">
+      <UniqueIdentifier>{68ed61db-d493-4b77-a786-d65c69355f75}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MuppetExpress.cpp">
@@ -21,7 +24,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\MuppetExpress</Filter>
+    </ClInclude>
+    <ClInclude Include="MuppetExpressDefinitions.hpp">
+      <Filter>Header Files\MuppetExpress</Filter>
+    </ClInclude>
+    <ClInclude Include="Router.hpp">
+      <Filter>Header Files\MuppetExpress</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

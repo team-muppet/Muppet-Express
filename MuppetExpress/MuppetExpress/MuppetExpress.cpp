@@ -21,6 +21,12 @@ int main() {
 
 	auto server = MuppetExpress::Server("10");
 
+	server.Use([](Request& req, Response& res, std::function<void()> next) {
+		std::cout << "Before:" << res.result() << std::endl;
+		next();
+		std::cout << "After:" << res.result() << std::endl;
+		});
+
 	server.MapGet("/", [](Request& req, Response& res) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");

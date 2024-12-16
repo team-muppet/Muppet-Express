@@ -18,4 +18,5 @@ namespace MuppetExpress {
 	using Request = http::request<http::string_body>;
 	using Response = http::response<http::string_body>;
 	using Handler = std::function<void(Request& request, Response& response)>;
+	using Middleware = std::function<void(Request& request, Response& response, std::function<void()> next)>;
 };

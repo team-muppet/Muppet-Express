@@ -65,7 +65,7 @@ public:
 			net::io_context ioc;
 
 			// Spawn the listener coroutine
-			net::co_spawn(ioc, listener(tcp::endpoint(tcp::v4(), 8080)), net::detached);
+			net::co_spawn(ioc, listener(tcp::endpoint(tcp::v4(), 8081)), net::detached);
 
 			// Determine the number of threads
 			unsigned int thread_count = std::thread::hardware_concurrency();
@@ -79,9 +79,9 @@ public:
 					});
 			}
 
-			std::cout << tcp::endpoint(tcp::v4(), 8080) << std::endl;
+			std::cout << tcp::endpoint(tcp::v4(), 8081) << std::endl;
 
-			std::cout << "Server is running on http://127.0.0.1:8080 with "
+			std::cout << "Server is running on http://127.0.0.1:8081 with "
 				<< thread_count << " threads..." << std::endl;
 
 			// Join all threads
@@ -148,9 +148,15 @@ private:
 
 		if (!lastSegment.empty() && node->children.find(lastSegment) != node->children.end()) {
 			node = node->children[lastSegment];
+
+			if (node->handlers.find(method) != node->handlers.end())
+			{
+				return node->handlers[method];
+			}
 		}
 
-		if (node->handlers.find(method) != node->handlers.end()) {
+		if (lastSegment.empty() && node->handlers.find(method) != node->handlers.end())
+		{
 			return node->handlers[method];
 		}
 
@@ -212,16 +218,22 @@ int main() {
 
 	auto server = MuppetExpress();
 
-	server.MapGet("/", [](auto req, auto res) {
+	server.MapGet("/", [](auto& req, auto& res) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
 		res.body() = "Hello World!";
 		});
 
-	server.MapGet("/test", [](auto req, auto res) {
+	server.MapGet("/test", [](auto& req, auto& res) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
-		res.body() = "Hello World!";
+		res.body() = "Hello Test!";
+		});
+
+	server.MapGet("/fish/", [](auto& req, auto& res) {
+		res.result(http::status::ok);
+		res.set(http::field::content_type, "text/plain");
+		res.body() = "Hello Fish!";
 		});
 
 	server.RunServer();

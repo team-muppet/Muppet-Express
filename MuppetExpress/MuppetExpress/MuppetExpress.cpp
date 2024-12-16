@@ -1,5 +1,6 @@
 #include "Server.hpp";
 
+using namespace MuppetExpress;
 
 // Main function
 int main() {
@@ -22,6 +23,18 @@ int main() {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
 		res.body() = "Hello Fish!";
+		});
+
+	server.MapPost("/echo", [](auto& req, auto& res) {
+		std::string body = req.body();
+
+		for (const auto& header : req)
+		{
+			res.set(header.name_string(), header.value());
+		}
+
+		res.result(http::status::ok);
+		res.body() = body;
 		});
 
 	server.RunServer();

@@ -10,12 +10,6 @@
 #include <vector>
 #include <thread>
 
-namespace beast = boost::beast;
-namespace http = beast::http;
-namespace net = boost::asio;
-using tcp = net::ip::tcp;
-using MuppetHandler = std::function<void(http::request<http::string_body>& request, http::response<http::string_body>& response)>;
-
 /*
 const express = require('express')
 const app = express()
@@ -31,6 +25,12 @@ app.listen(port, () => {
 */
 
 namespace MuppetExpress {
+	namespace beast = boost::beast;
+	namespace http = beast::http;
+	namespace net = boost::asio;
+	using tcp = net::ip::tcp;
+	using MuppetHandler = std::function<void(http::request<http::string_body>& request, http::response<http::string_body>& response)>;
+
 	class Server
 	{
 	public:

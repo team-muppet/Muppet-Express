@@ -28,20 +28,51 @@ app.listen(port, () => {
 })
 */
 
+struct portnumberVisitor
+{
+	int operator()(int portnumber) {
+		std::cout << portnumber << std::endl;
+		return portnumber;
+	}
+	int operator()(std::string_view portnumber) {
+		std::string portnumberString(portnumber);
+		std::cout << portnumber << std::endl;
+		return std::stoi(portnumberString);
+	}
+};
+
+struct constPortnumberVisitor {
+	constexpr int operator()(int portnumber) const {
+		return portnumber; // Simply return the integer
+	}
+
+	constexpr int operator()(std::string_view portnumber) const {
+		// Parse string_view into int at compile time
+		int result = 0;
+		for (char c : portnumber) {
+			if (c < '0' || c > '9') throw "Invalid character"; // Compile-time check
+			result = result * 10 + (c - '0');
+		}
+		return result;
+	}
+};
+
 namespace MuppetExpress {
 	class Server
 	{
 	public:
-		Server(std::variant<std::string, int> portnumber) {
+		Server(std::variant<std::string_view, int> portnumber) {
 
-			if (holds_alternative<int>(portnumber))
-			{
-				std::cout << get<int>(portnumber) << std::endl;
+
+			if constexpr (std::is_constant_evaluated()) {
+				constPortnumberVisitor visitor;
+				portnumber_ = std::visit(visitor, portnumber);
 			}
-			else
-			{
-				std::cout <<  get<std::string>(portnumber) << std::endl;
+			else {
+				portnumberVisitor visitor;
+				portnumber_ = std::visit(visitor, portnumber);
 			}
+
 		}
 
 		Server& MapGet(const std::string_view& path, Handler handler)
@@ -79,7 +110,7 @@ namespace MuppetExpress {
 				net::io_context ioc;
 
 				// Spawn the listener coroutine
-				net::co_spawn(ioc, listener(tcp::endpoint(tcp::v4(), 8081)), net::detached);
+				net::co_spawn(ioc, listener(tcp::endpoint(tcp::v4(), portnumber_)), net::detached);
 
 				// Determine the number of threads
 				unsigned int thread_count = std::thread::hardware_concurrency();
@@ -93,9 +124,9 @@ namespace MuppetExpress {
 						});
 				}
 
-				std::cout << tcp::endpoint(tcp::v4(), 8081) << std::endl;
+				std::cout << tcp::endpoint(tcp::v4(), portnumber_) << std::endl;
 
-				std::cout << "Server is running on http://127.0.0.1:8081 with "
+				std::cout << "Server is running on http://127.0.0.1:" << portnumber_ << " with "
 					<< thread_count << " threads..." << std::endl;
 
 				// Join all threads
@@ -109,6 +140,8 @@ namespace MuppetExpress {
 		}
 
 	private:
+
+		int portnumber_;
 
 		Router router;
 		MiddlewareManager _middlewareManager;

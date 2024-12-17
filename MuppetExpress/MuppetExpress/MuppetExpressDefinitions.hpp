@@ -17,6 +17,11 @@ namespace MuppetExpress {
 	using tcp = net::ip::tcp;
 	using Request = http::request<http::string_body>;
 	using Response = http::response<http::string_body>;
-	using Handler = std::function<void(Request& request, Response& response)>;
+	using Parameters = std::unordered_map<std::string, std::string>;
+
+	using HandlerWithoutParameters = std::function<void(Request& request, Response& response)>;
+	using HandlerWithParameters = std::function<void(Request& request, Response& response, Parameters& parameters)>;
+	using Handler = std::variant<HandlerWithoutParameters, HandlerWithParameters>;
+
 	using Middleware = std::function<void(Request& request, Response& response, std::function<void()> next)>;
 };

@@ -19,7 +19,7 @@ struct EchoFunctor {
 // Main function
 int main() {
 
-	auto server = MuppetExpress::Server("10");
+	auto server = MuppetExpress::Server("2000");
 
 	server.Use([](Request& req, Response& res, std::function<void()> next) {
 		std::cout << "Before 1: " << res.result() << std::endl;
@@ -46,11 +46,23 @@ int main() {
 		res.body() = "Hello Test!";
 		});
 
-	server.MapGet("/fish/", [](Request& req, Response& res) {
+	auto handler = [](Request& req, Response& res, Parameters& params) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
-		res.body() = "Hello Fish!";
-		});
+
+		std::string str;
+
+		for (auto& param : params)
+		{
+			str += param.first + " = " + param.second + '\n';
+		}
+
+		res.body() = str;
+		};
+
+	server.MapGet("/fish/{id}/{stupid}", handler);
+	server.MapGet("/fish/{id}", handler);
+	server.MapGet("/fish/", handler);
 
 	server.MapPost("/echo", EchoFunctor());
 

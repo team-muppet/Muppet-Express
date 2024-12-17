@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <boost/beast.hpp>
 #include <boost/asio.hpp>
@@ -63,7 +63,6 @@ namespace MuppetExpress {
 	public:
 		Server(std::variant<std::string_view, int> portnumber) {
 
-
 			if constexpr (std::is_constant_evaluated()) {
 				constPortnumberVisitor visitor;
 				portnumber_ = std::visit(visitor, portnumber);
@@ -81,19 +80,19 @@ namespace MuppetExpress {
 			return *this;
 		}
 
-		Server& MapPost(const std::string_view path, Handler handler)
+		Server& MapPost(const std::string_view& path, Handler handler)
 		{
 			router.registerHandler(http::verb::post, path, handler);
 			return *this;
 		}
 
-		Server& MapPut(const std::string_view path, Handler handler)
+		Server& MapPut(const std::string_view& path, Handler handler)
 		{
 			router.registerHandler(http::verb::put, path, handler);
 			return *this;
 		}
 
-		Server& MapDelete(const std::string_view path, Handler handler)
+		Server& MapDelete(const std::string_view& path, Handler handler)
 		{
 			router.registerHandler(http::verb::delete_, path, handler);
 			return *this;
@@ -123,8 +122,6 @@ namespace MuppetExpress {
 						ioc.run();
 						});
 				}
-
-				std::cout << tcp::endpoint(tcp::v4(), portnumber_) << std::endl;
 
 				std::cout << "Server is running on http://127.0.0.1:" << portnumber_ << " with "
 					<< thread_count << " threads..." << std::endl;
@@ -161,7 +158,7 @@ namespace MuppetExpress {
 				// Make an endpoint handler function
 				std::function<void()> routeHandler = [&]() {
 					if (optionalHandler) {
-						auto& handler = optionalHandler.value().first;
+						auto& handler = optionalHandler.value();
 						handler(req, res);
 					}
 					else {

@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "Definitions.hpp"
 
@@ -25,19 +26,24 @@ namespace MuppetExpress {
 
             // Check if the response status is 404
             if (res.result() == http::status::not_found) {
-                std::string path = _rootDir + std::string(req.target());
+                // Construct the base path from the request target
+                std::string targetPath = std::string(req.target());
+                std::string path = _rootDir + targetPath;
 
-                // If the target path ends with '/', append 'index.html'
-                if (req.target().back() == '/') {
-                    path += "index.html";
-                }
+                // List of potential file candidates to check
+                std::vector<std::string> candidates = {
+                    path,                      // Exact path (e.g., wwwroot/about)
+                    path + ".html",            // Path with .html appended (e.g., wwwroot/about.html)
+                    path + "/index.html"       // Path as a directory with index.html (e.g., wwwroot/about/index.html)
+                };
 
-                // Normalize the path
-                fs::path filePath = fs::absolute(fs::path(path));
-
-                // Check if the file exists and is a regular file
-                if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
-                    serveFile(filePath, res);
+                // Iterate through the candidates and serve the first valid file found
+                for (const auto& candidate : candidates) {
+                    fs::path filePath = fs::absolute(fs::path(candidate));
+                    if (fs::exists(filePath) && fs::is_regular_file(filePath)) {
+                        serveFile(filePath, res);
+                        return;
+                    }
                 }
             }
         }

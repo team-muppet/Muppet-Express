@@ -25,6 +25,8 @@ namespace MuppetExpress {
 			auto node = traversePathForLookup(request.target(), params);
 			if (!node) return std::nullopt;
 
+			parseQueryParameters(request.target(), params);
+
 			request.params(params);
 
 			if (auto it = node->handlers.find(request.method()); it != node->handlers.end()) {
@@ -147,8 +149,10 @@ namespace MuppetExpress {
 			auto node = root;
 			size_t start = 0;
 
-			while (start < path.size()) {
-				size_t end = path.find('/', start);
+			const std::string seperators = "?&#";
+
+			while (start < path.size() && (start == 0 || seperators.find(path[start - 1]) == std::string_view::npos)) {
+				size_t end = path.find_first_of("/?&#", start);
 				if (end == std::string_view::npos) {
 					end = path.size();
 				}
@@ -177,6 +181,38 @@ namespace MuppetExpress {
 
 			return node;
 		}
-	};
 
+		void parseQueryParameters(const std::string_view& path, Parameters& Parameter)
+		{
+			size_t start = path.find('?');
+			if (start == std::string_view::npos) {
+				return;
+			}
+
+			while (start < path.size()) {
+				std::string key, value;
+				size_t end = path.find('=', start);
+				if (end != std::string_view::npos) {
+					key = path.substr(start + 1, (end - start) - 1);
+					start = end;
+				}
+
+				end = path.find_first_of("&#", start);
+				if (end != std::string_view::npos) {
+					value = path.substr(start + 1, (end - start) - 1);
+				}
+				else
+				{
+					value = path.substr(start + 1);
+				}
+
+				if (!key.empty() && !value.empty())
+				{
+					Parameter[key] = value;
+				}
+
+				start = end;
+			}
+		}
+	};
 } // namespace MuppetExpress

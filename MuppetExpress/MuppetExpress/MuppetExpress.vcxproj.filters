@@ -21,6 +21,9 @@
     <ClCompile Include="MuppetExpress.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="StaticFileMiddleware.hpp">
+      <Filter>Header Files\MuppetExpress</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.hpp">

@@ -1,4 +1,6 @@
 #include "Server.hpp";
+#include "StaticFileMiddleware.hpp"
+
 
 using namespace MuppetExpress;
 
@@ -21,6 +23,8 @@ int main() {
 
 	auto server = MuppetExpress::Server("2000");
 
+	server.Use(MuppetExpress::StaticFileMiddleware("wwwroot"));
+
 	server.Use([](Request& req, Response& res, std::function<void()> next) {
 		std::string str;
 		for (auto& param : req.params())
@@ -38,12 +42,6 @@ int main() {
 		std::cout << "Before 2: " << res.result() << std::endl;
 		next();
 		std::cout << "After 2: " << res.result() << std::endl;
-		});
-
-	server.MapGet("/", [](Request& req, Response& res) {
-		res.result(http::status::ok);
-		res.set(http::field::content_type, "text/plain");
-		res.body() = "Hello World!";
 		});
 
 	server.MapGet("/test", [](Request& req, Response& res) {

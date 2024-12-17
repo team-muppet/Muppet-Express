@@ -28,8 +28,27 @@ namespace MuppetExpress {
 			next(); // Initial next() call to start the chain
 		}
 
+		void runChainBind(Request& req, Response& res, std::function<void()> endpointHandler) {
+			std::size_t current = 0;
+
+			auto next = std::bind(&MiddlewareManager::runNext, this, std::ref(current), std::ref(req), std::ref(res), endpointHandler);
+
+			next();
+		}
+
 	private:
 		std::vector<Middleware> _middlewareChain;
 
+		void runNext(std::size_t current, Request& req, Response& res, std::function<void()> endpointHandler) {
+			if (current < _middlewareChain.size()) {
+				Middleware& mw = _middlewareChain[current++];
+				auto next = std::bind(&MiddlewareManager::runNext, this, std::ref(current), std::ref(req), std::ref(res), endpointHandler);
+				mw(req, res, next);
+			}
+			else
+			{
+				endpointHandler();
+			}
+		}
 	};
 }

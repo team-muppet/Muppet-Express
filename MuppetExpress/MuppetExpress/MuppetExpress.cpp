@@ -22,9 +22,16 @@ int main() {
 	auto server = MuppetExpress::Server("10");
 
 	server.Use([](Request& req, Response& res, std::function<void()> next) {
-		std::cout << "Before:" << res.result() << std::endl;
+		std::cout << "Before 1: " << res.result() << std::endl;
+		res.result(http::status::unauthorized);
 		next();
-		std::cout << "After:" << res.result() << std::endl;
+		std::cout << "After 1: " << res.result() << std::endl;
+		});
+
+	server.Use([](Request& req, Response& res, std::function<void()> next) {
+		std::cout << "Before 2: " << res.result() << std::endl;
+		next();
+		std::cout << "After 2: " << res.result() << std::endl;
 		});
 
 	server.MapGet("/", [](Request& req, Response& res) {

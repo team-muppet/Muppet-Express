@@ -26,10 +26,13 @@
     <ClInclude Include="Server.hpp">
       <Filter>Header Files\MuppetExpress</Filter>
     </ClInclude>
-    <ClInclude Include="MuppetExpressDefinitions.hpp">
+    <ClInclude Include="Definitions.hpp">
       <Filter>Header Files\MuppetExpress</Filter>
     </ClInclude>
     <ClInclude Include="Router.hpp">
+      <Filter>Header Files\MuppetExpress</Filter>
+    </ClInclude>
+    <ClInclude Include="Request.hpp">
       <Filter>Header Files\MuppetExpress</Filter>
     </ClInclude>
     <ClInclude Include="MiddlewareManager.hpp">

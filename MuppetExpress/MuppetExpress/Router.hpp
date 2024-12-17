@@ -9,7 +9,7 @@
 #include <variant>
 #include <functional>
 
-#include "MuppetExpressDefinitions.hpp"
+#include "Definitions.hpp"
 
 namespace MuppetExpress {
 
@@ -20,12 +20,14 @@ namespace MuppetExpress {
 			node->handlers[method] = std::move(handler);
 		}
 
-		std::optional<HandlerWithoutParameters> resolve(http::verb method, const std::string_view& path) {
+		std::optional<HandlerWithoutParameters> resolve(Request& request) {
 			std::unordered_map<std::string, std::string> params;
-			auto node = traversePathForLookup(path, params);
+			auto node = traversePathForLookup(request.target(), params);
 			if (!node) return std::nullopt;
 
-			if (auto it = node->handlers.find(method); it != node->handlers.end()) {
+			request.params(params);
+
+			if (auto it = node->handlers.find(request.method()); it != node->handlers.end()) {
 				/*return std::visit([&](auto&& handlerVariant) -> std::optional<HandlerWithoutParameters> {
 					if constexpr (std::is_same_v<std::decay_t<decltype(handlerVariant)>, HandlerWithoutParameters>) {
 						return handlerVariant;

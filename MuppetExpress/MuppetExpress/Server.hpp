@@ -12,7 +12,7 @@
 #include "Router.hpp"
 #include "MiddlewareManager.hpp"
 
-#include "MuppetExpressDefinitions.hpp"
+#include "Definitions.hpp"
 
 /*
 const express = require('express')
@@ -147,13 +147,13 @@ namespace MuppetExpress {
 		net::awaitable<void> handle_request(tcp::socket socket) {
 			try {
 				beast::flat_buffer buffer;
-				http::request<http::string_body> req;
-				http::response<http::string_body> res;
+				Request req;
+				Response res;
 
 				// Read the HTTP request
 				co_await http::async_read(socket, buffer, req, net::use_awaitable);
 
-				auto optionalHandler = router.resolve(req.method(), req.target());
+				auto optionalHandler = router.resolve(req);
 
 				// Make an endpoint handler function
 				std::function<void()> routeHandler = [&]() {

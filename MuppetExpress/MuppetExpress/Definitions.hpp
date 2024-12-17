@@ -10,12 +10,13 @@
 #include <vector>
 #include <thread>
 
+#include "Request.hpp"
+
 namespace MuppetExpress {
 	namespace beast = boost::beast;
 	namespace http = beast::http;
 	namespace net = boost::asio;
 	using tcp = net::ip::tcp;
-	using Request = http::request<http::string_body>;
 	using Response = http::response<http::string_body>;
 	using Parameters = std::unordered_map<std::string, std::string>;
 

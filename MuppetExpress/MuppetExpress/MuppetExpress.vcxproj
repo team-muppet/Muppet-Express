@@ -137,7 +137,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MiddlewareManager.hpp" />
-    <ClInclude Include="MuppetExpressDefinitions.hpp" />
+    <ClInclude Include="Definitions.hpp" />
+    <ClInclude Include="Request.hpp" />
     <ClInclude Include="Router.hpp" />
     <ClInclude Include="Server.hpp" />
   </ItemGroup>

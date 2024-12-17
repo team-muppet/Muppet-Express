@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "MuppetExpressDefinitions.hpp"
+#include "Definitions.hpp"
 
 namespace MuppetExpress {
 

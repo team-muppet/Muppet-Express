@@ -22,6 +22,12 @@ int main() {
 	auto server = MuppetExpress::Server("2000");
 
 	server.Use([](Request& req, Response& res, std::function<void()> next) {
+		std::string str;
+		for (auto& param : req.params())
+		{
+			std::cout << param.first + " = " + param.second << std::endl;
+		}
+		
 		std::cout << "Before 1: " << res.result() << std::endl;
 		res.result(http::status::unauthorized);
 		next();

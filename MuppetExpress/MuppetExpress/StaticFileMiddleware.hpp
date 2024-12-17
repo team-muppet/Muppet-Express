@@ -75,7 +75,7 @@ namespace MuppetExpress {
             // Set the response details
             res.result(http::status::ok);
             res.set(http::field::content_type, getContentType(filePath));
-            res.body() = body;
+            res.body() = std::move(body);
         }
 
         std::string getContentType(const fs::path& filePath) {

@@ -9,9 +9,17 @@ namespace MuppetExpress {
 	public:
 		void addMiddleware(Middleware middleware) {
 			// Strong guarantee, has to create a copy, but ensures that _middlewareChain remains in a valid state if push_back() should fail to alloc
-			std::vector<Middleware> tmp(_middlewareChain);
-			tmp.push_back(middleware);
-			_middlewareChain.swap(tmp);
+
+			if (_middlewareChain.capacity() == _middlewareChain.size())
+			{
+				std::vector<Middleware> tmp(_middlewareChain);
+				tmp.push_back(middleware);
+				_middlewareChain.swap(tmp);
+			}
+			else
+			{
+				_middlewareChain.push_back(middleware);
+			}
 		}
 
 		void runChain(Request& req, Response& res, std::function<void()> endpointHandler) {

@@ -1,5 +1,7 @@
 #include "Server.hpp"
 #include "StaticFileMiddleware.hpp"
+#include "PokemonModel.hpp"
+#include "RestController.hpp"
 
 
 using namespace MuppetExpress;
@@ -69,6 +71,8 @@ int main() {
 	server.MapGet("/fish/", handler);
 
 	server.MapPost("/echo", EchoFunctor());
+
+	RestController<Pokemon> userController(server, "/pokemon");
 
 	server.RunServer();
 

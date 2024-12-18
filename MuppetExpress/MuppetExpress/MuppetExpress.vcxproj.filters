@@ -41,5 +41,11 @@
     <ClInclude Include="MiddlewareManager.hpp">
       <Filter>Header Files\MuppetExpress</Filter>
     </ClInclude>
+    <ClInclude Include="PokemonModel.hpp">
+      <Filter>Header Files\MuppetExpress</Filter>
+    </ClInclude>
+    <ClInclude Include="RestController.hpp">
+      <Filter>Header Files\MuppetExpress</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

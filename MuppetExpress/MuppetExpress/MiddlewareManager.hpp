@@ -42,9 +42,7 @@ namespace MuppetExpress {
 		void runChainBind(Request& req, Response& res, std::function<void()> endpointHandler) {
 			std::size_t current = 0;
 
-			auto next = std::bind(&MiddlewareManager::runNext, this, std::ref(current), std::ref(req), std::ref(res), endpointHandler);
-
-			next();
+			runNext(current, req, res, endpointHandler);
 		}
 
 	private:

@@ -4,7 +4,7 @@
 #include "Server.hpp"
 #include <vector>
 #include <algorithm>
-#include "PokemonLiteral.hpp"
+#include "PokemonModel.hpp"
 
 namespace MuppetExpress {
     using json = nlohmann::json;

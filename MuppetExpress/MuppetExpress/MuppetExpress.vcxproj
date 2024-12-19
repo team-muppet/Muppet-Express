@@ -135,7 +135,6 @@
   <ItemGroup>
     <ClCompile Include="MuppetExpress.cpp" />
     <ClCompile Include="PmrDatastore.hpp" />
-    <ClCompile Include="PokemonLiteral.hpp" />
     <ClCompile Include="StaticFileMiddleware.hpp" />
   </ItemGroup>
   <ItemGroup>

@@ -74,6 +74,7 @@ namespace MuppetExpress {
 
         // GET item by ID
         void handleGetById(Request& req, Response& res, Parameters& params) {
+            // Keep this so we can trigger global exception handler
             int id = std::stoi(params["id"]);
             auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                 return dto.Id == id;

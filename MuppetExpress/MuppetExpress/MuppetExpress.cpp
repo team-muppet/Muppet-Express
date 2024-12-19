@@ -23,7 +23,22 @@ struct EchoFunctor {
 // Main function
 int main() {
 
-	auto server = MuppetExpress::Server("2000");
+	auto exceptionHandler = [](Request& req, Response& res, std::function<void()> routehandler) {
+		try {
+			// Handle request with middleware
+			routehandler();
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Error: " << e.what() << std::endl;
+
+			res.body() = "You dummy";
+		}
+		catch (...) {
+			std::cerr << "Unspecified error occured" << std::endl;
+		}
+		};
+
+	auto server = MuppetExpress::Server("2000", exceptionHandler);
 
 	server.Use(MuppetExpress::StaticFileMiddleware("wwwroot"));
 
@@ -33,7 +48,7 @@ int main() {
 		{
 			std::cout << param.first + " = " + param.second << std::endl;
 		}
-		
+
 		std::cout << "Before 1: " << res.result() << std::endl;
 		res.result(http::status::unauthorized);
 		next();

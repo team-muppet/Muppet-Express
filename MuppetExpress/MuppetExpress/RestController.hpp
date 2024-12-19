@@ -83,6 +83,7 @@ namespace MuppetExpress {
 
         // GET item by ID
         void handleGetById(Request& req, Response& res, Parameters& params) {
+            // Keep this so we can trigger global exception handler
             int id = std::stoi(params["id"]);
             auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                 return dto.Id == id;
@@ -142,11 +143,13 @@ namespace MuppetExpress {
                 }
                 else {
                     res.result(http::status::not_found);
+                    res.set(http::field::content_type, "application/json");
                     res.body() = R"({ "error": "Item not found" })";
                 }
             }
             catch (const std::exception& e) {
                 res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
                 res.body() = json{ {"error", e.what()} }.dump();
             }
         }
@@ -161,10 +164,12 @@ namespace MuppetExpress {
             if (it != dataStore_.end()) {
                 dataStore_.erase(it, dataStore_.end());
                 res.result(http::status::ok);
+                res.set(http::field::content_type, "application/json");
                 res.body() = R"({ "message": "Item deleted" })";
             }
             else {
                 res.result(http::status::not_found);
+                res.set(http::field::content_type, "application/json");
                 res.body() = R"({ "error": "Item not found" })";
             }
         }

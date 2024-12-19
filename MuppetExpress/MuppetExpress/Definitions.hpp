@@ -26,6 +26,5 @@ namespace MuppetExpress {
 
 	using Middleware = std::function<void(Request& request, Response& response, std::function<void()> next)>;
 	
-	using CallChain = std::function<void(Request& req, Response& res, std::function<void()> routehandler)>;
-	using GlobalExceptionHandler = std::function<void(CallChain)>;
+	using GlobalExceptionHandler = std::function<void(Request& req, Response& res, std::function<void()> routehandler)>;
 };

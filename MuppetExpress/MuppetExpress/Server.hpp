@@ -72,6 +72,7 @@ namespace MuppetExpress {
 				portnumber_ = std::visit(visitor, portnumber);
 			}
 
+			_globalExceptionHandler = exceptionHandler;
 		}
 
 		Server& MapGet(const std::string_view& path, Handler handler)
@@ -142,7 +143,7 @@ namespace MuppetExpress {
 
 		Router router;
 		MiddlewareManager _middlewareManager;
-		GlobalExceptionHandler _exceptionHandler;
+		std::optional<GlobalExceptionHandler> _globalExceptionHandler;
 
 		// Handle an HTTP request
 		net::awaitable<void> handle_request(tcp::socket socket) {
@@ -167,19 +168,19 @@ namespace MuppetExpress {
 						res.set(http::field::content_type, "text/plain");
 						res.body() = "404 Not Found";
 					}
-				};
+					};
 
-				try {
-					// Handle request with middleware
+				auto handler = [&]() {
 					_middlewareManager.runChain(req, res, routeHandler);
+					};
+
+				if (_globalExceptionHandler)
+				{
+					_globalExceptionHandler.value()(req, res, handler);
 				}
-				catch (const std::exception& e) {
-					std::cerr << "Error: " << e.what() << std::endl;
-					setResponseInternalServerError(res);
-				}
-				catch (...) {
-					std::cerr << "Unspecified error occured" << std::endl;
-					setResponseInternalServerError(res);
+				else
+				{
+					DefaultGlobalExceptionHandler(req, res, handler);
 				}
 
 				res.prepare_payload();

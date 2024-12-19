@@ -61,7 +61,7 @@ namespace MuppetExpress {
 	class Server
 	{
 	public:
-		Server(std::variant<std::string_view, int> portnumber) {
+		Server(std::variant<std::string_view, int> portnumber, std::optional<GlobalExceptionHandler> exceptionHandler = std::nullopt) {
 
 			if constexpr (std::is_constant_evaluated()) {
 				constPortnumberVisitor visitor;
@@ -142,6 +142,7 @@ namespace MuppetExpress {
 
 		Router router;
 		MiddlewareManager _middlewareManager;
+		GlobalExceptionHandler _exceptionHandler;
 
 		// Handle an HTTP request
 		net::awaitable<void> handle_request(tcp::socket socket) {
@@ -168,8 +169,18 @@ namespace MuppetExpress {
 					}
 				};
 
-				// Handle request with middleware
-				_middlewareManager.runChain(req, res, routeHandler);
+				try {
+					// Handle request with middleware
+					_middlewareManager.runChain(req, res, routeHandler);
+				}
+				catch (const std::exception& e) {
+					std::cerr << "Error: " << e.what() << std::endl;
+					setResponseInternalServerError(res);
+				}
+				catch (...) {
+					std::cerr << "Unspecified error occured" << std::endl;
+					setResponseInternalServerError(res);
+				}
 
 				res.prepare_payload();
 
@@ -193,6 +204,27 @@ namespace MuppetExpress {
 			while (true) {
 				tcp::socket socket = co_await acceptor.async_accept(net::use_awaitable);
 				net::co_spawn(executor, handle_request(std::move(socket)), net::detached);
+			}
+		}
+
+		void setResponseInternalServerError(Response& res) {
+			res.result(http::status::internal_server_error);
+			res.set(http::field::content_type, "text/plain");
+			res.body() = "500 internal server error";
+		}
+
+		void DefaultGlobalExceptionHandler(Request& req, Response& res, std::function<void()> routehandler) {
+			try {
+				// Handle request with middleware
+				routehandler();
+			}
+			catch (const std::exception& e) {
+				std::cerr << "Error: " << e.what() << std::endl;
+				setResponseInternalServerError(res);
+			}
+			catch (...) {
+				std::cerr << "Unspecified error occured" << std::endl;
+				setResponseInternalServerError(res);
 			}
 		}
 	};

@@ -21,7 +21,13 @@ namespace MuppetExpress {
     };
 
     template <typename DTO>
-        requires HasId<DTO>&& Serializable<DTO>
+    concept IsDTO = requires { 
+        HasId<DTO> && Serializable<DTO>; 
+    };
+    
+    // template <IsDTO DTO>
+    template <typename DTO>
+        requires IsDTO<DTO>
     class RestController {
     public:
         RestController(Server& server, const std::string& basePath)
@@ -33,6 +39,7 @@ namespace MuppetExpress {
         Server& server_;
         std::string basePath_;
         std::vector<DTO> dataStore_;
+        std::size_t idCounter_;
 
         void setupHandlers() {
             server_.MapGet(basePath_, [this](Request& req, Response& res) {
@@ -90,10 +97,7 @@ namespace MuppetExpress {
                 json jsonBody = json::parse(req.body());
                 DTO newItem = jsonBody.get<DTO>();
 
-                // Assign a sequential ID if not set
-                if (newItem.Id == 0) {
-                    newItem.Id = static_cast<int>(dataStore_.size() + 1);
-                }
+                newItem.Id = ++idCounter_;
 
                 dataStore_.push_back(newItem);
 

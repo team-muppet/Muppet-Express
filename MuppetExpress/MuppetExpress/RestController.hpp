@@ -4,9 +4,9 @@
 #include "Server.hpp"
 #include <vector>
 #include <algorithm>
+#include "PokemonLiteral.hpp"
 
 namespace MuppetExpress {
-
     using json = nlohmann::json;
 
     template <typename DTO>
@@ -42,6 +42,7 @@ namespace MuppetExpress {
         RestController(Server& server, const std::string& basePath)
             : server_(server), basePath_(basePath) {
             setupHandlers();
+			seedFunction();
         }
 
     private:
@@ -172,6 +173,18 @@ namespace MuppetExpress {
                 res.set(http::field::content_type, "application/json");
                 res.body() = R"({ "error": "Item not found" })";
             }
+        }
+
+        void seedFunction() {
+            // Seed the random number generator
+
+            dataStore_.push_back("1,pikachu"_pokemon);
+            ++idCounter_;
+            dataStore_.push_back("2,bulbasaur"_pokemon);
+            ++idCounter_;
+            dataStore_.push_back("3,charmander"_pokemon);
+            ++idCounter_;
+
         }
     };
 

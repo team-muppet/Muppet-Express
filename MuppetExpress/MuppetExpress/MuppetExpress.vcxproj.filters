@@ -24,6 +24,12 @@
     <ClCompile Include="StaticFileMiddleware.hpp">
       <Filter>Header Files\MuppetExpress</Filter>
     </ClCompile>
+    <ClCompile Include="PmrDatastore.hpp">
+      <Filter>Header Files\MuppetExpress</Filter>
+    </ClCompile>
+    <ClCompile Include="PokemonLiteral.hpp">
+      <Filter>Header Files\MuppetExpress</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.hpp">

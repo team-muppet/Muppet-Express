@@ -1,6 +1,5 @@
 #include "Server.hpp"
 #include "StaticFileMiddleware.hpp"
-#include "PokemonModel.hpp"
 #include "RestController.hpp"
 
 
@@ -21,7 +20,7 @@ struct EchoFunctor {
 };
 
 // Main function
-int main() {
+int main(int argc, char** argv) {
 
 	auto exceptionHandler = [](Request& req, Response& res, std::function<void()> routehandler) {
 		try {
@@ -38,7 +37,17 @@ int main() {
 		}
 		};
 
-	auto server = MuppetExpress::Server("2000", exceptionHandler);
+	std::variant<std::string, int> port = 2000;
+
+	for (int i = 1; i < argc; ++i) {
+		std::string arg = argv[i];
+
+		if (arg == "-port" && (i + 1 < argc)) {
+				port = argv[++i];
+		}
+	}
+
+	auto server = MuppetExpress::Server(port, exceptionHandler);
 
 	server.Use(MuppetExpress::StaticFileMiddleware("wwwroot"));
 

@@ -24,10 +24,19 @@ namespace MuppetExpress {
     concept IsDTO = requires { 
         HasId<DTO> && Serializable<DTO>; 
     };
-    
+
+    template <template<typename> typename DataStore, typename DTO>
+    concept IsDatastore = requires(DataStore<DTO> store, DTO dto) {
+        { store.begin() } -> std::input_iterator;
+        { store.end() } -> std::sentinel_for<decltype(store.begin())>; // Sentinel checks if its a valid end marker for store.begin()
+        { store.push_back(dto) } -> std::same_as<void>;
+        { store.erase(store.begin(), store.end()) } -> std::same_as<typename DataStore<DTO>::iterator>;
+        { json(store) } -> std::same_as<json>;
+    };
+
     // template <IsDTO DTO>
-    template <typename DTO>
-        requires IsDTO<DTO>
+    template <typename DTO, template <typename> typename Datastore>
+        requires IsDatastore<Datastore, DTO> && IsDTO<DTO>
     class RestController {
     public:
         RestController(Server& server, const std::string& basePath)
@@ -38,7 +47,7 @@ namespace MuppetExpress {
     private:
         Server& server_;
         std::string basePath_;
-        std::vector<DTO> dataStore_;
+        Datastore<DTO> dataStore_;
         std::size_t idCounter_;
 
         void setupHandlers() {

@@ -72,7 +72,7 @@ int main() {
 
 	server.MapPost("/echo", EchoFunctor());
 
-	RestController<Pokemon> userController(server, "/pokemon");
+	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon");
 
 	server.RunServer();
 

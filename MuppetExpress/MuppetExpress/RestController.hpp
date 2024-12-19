@@ -39,10 +39,13 @@ namespace MuppetExpress {
         requires IsDatastore<Datastore, DTO> && IsDTO<DTO>
     class RestController {
     public:
-        RestController(Server& server, const std::string& basePath)
+        RestController(Server& server, const std::string& basePath, std::optional<std::function<void(Datastore<DTO>& datastore, std::size_t& idCounter)>> seedFunction = std::nullopt)
             : server_(server), basePath_(basePath) {
             setupHandlers();
-			seedFunction();
+            if (seedFunction)
+            {
+				seedFunction.value()(dataStore_ , idCounter_);
+            }
         }
 
     private:
@@ -173,18 +176,6 @@ namespace MuppetExpress {
                 res.set(http::field::content_type, "application/json");
                 res.body() = R"({ "error": "Item not found" })";
             }
-        }
-
-        void seedFunction() {
-            // Seed the random number generator
-
-            dataStore_.push_back("1,pikachu"_pokemon);
-            ++idCounter_;
-            dataStore_.push_back("2,bulbasaur"_pokemon);
-            ++idCounter_;
-            dataStore_.push_back("3,charmander"_pokemon);
-            ++idCounter_;
-
         }
     };
 

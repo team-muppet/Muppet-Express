@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 		std::string arg = argv[i];
 
 		if (arg == "-port" && (i + 1 < argc)) {
-				port = argv[++i];
+			port = argv[++i];
 		}
 	}
 
@@ -96,7 +96,21 @@ int main(int argc, char** argv) {
 
 	server.MapPost("/echo", EchoFunctor());
 
-	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon");
+	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, std::size_t& idCounter){
+			try
+			{
+				datastore.push_back("1,pikachu"_pokemon);
+				++idCounter;
+				datastore.push_back("2,bulbasaur"_pokemon);
+				++idCounter;
+				datastore.push_back("a,charmander"_pokemon);
+				++idCounter;
+			}
+			catch (const std::exception& e)
+			{
+				std::cerr << "Error: " << e.what() << std::endl;
+			}
+	});
 
 	server.RunServer();
 

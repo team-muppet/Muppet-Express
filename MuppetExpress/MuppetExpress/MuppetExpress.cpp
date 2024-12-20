@@ -37,13 +37,21 @@ int main(int argc, char** argv) {
 		}
 		};
 
-	std::variant<std::string, int> port = 2000;
+	std::variant<std::string, int> port;
 
-	for (int i = 1; i < argc; ++i) {
-		std::string arg = argv[i];
+	constexpr int portnr = 2222;
 
-		if (arg == "-port" && (i + 1 < argc)) {
-			port = argv[++i];
+	if constexpr (portnr != NULL) {
+		std::cout << "from constexpr Port is 2000" << std::endl;
+		port = portnr;
+	}
+	else {
+		for (int i = 1; i < argc; ++i) {
+			std::string arg = argv[i];
+
+			if (arg == "-port" && (i + 1 < argc)) {
+				port = argv[++i];
+			}
 		}
 	}
 

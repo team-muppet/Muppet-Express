@@ -7,7 +7,9 @@
 #include <string>
 
 struct Pokemon {
-    int Id;
+    using IdType = int;
+
+    IdType Id;
     std::string Name;
 };
 

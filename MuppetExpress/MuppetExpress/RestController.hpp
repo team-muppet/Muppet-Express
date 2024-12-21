@@ -5,13 +5,15 @@
 #include <vector>
 #include <algorithm>
 #include "PokemonModel.hpp"
+#include "IdTraits.hpp"
 
 namespace MuppetExpress {
     using json = nlohmann::json;
 
     template <typename DTO>
     concept HasId = requires(DTO dto) {
-        { dto.Id } -> std::convertible_to<int>;
+        typename DTO::IdType;
+        { dto.Id } -> std::same_as<typename DTO::IdType>;
     };
 
     template <typename DTO>
@@ -39,12 +41,12 @@ namespace MuppetExpress {
         requires IsDatastore<Datastore, DTO> && IsDTO<DTO>
     class RestController {
     public:
-        RestController(Server& server, const std::string& basePath, std::optional<std::function<void(Datastore<DTO>& datastore, std::size_t& idCounter)>> seedFunction = std::nullopt)
+        RestController(Server& server, const std::string& basePath, std::optional<std::function<void(Datastore<DTO>& datastore)>> seedFunction = std::nullopt)
             : server_(server), basePath_(basePath) {
             setupHandlers();
             if (seedFunction)
             {
-				seedFunction.value()(dataStore_ , idCounter_);
+				seedFunction.value()(dataStore_);
             }
         }
 
@@ -52,7 +54,6 @@ namespace MuppetExpress {
         Server& server_;
         std::string basePath_;
         Datastore<DTO> dataStore_;
-        std::size_t idCounter_;
 
         void setupHandlers() {
             server_.MapGet(basePath_, [this](Request& req, Response& res) {
@@ -88,7 +89,8 @@ namespace MuppetExpress {
         // GET item by ID
         void handleGetById(Request& req, Response& res, Parameters& params) {
             // Keep this so we can trigger global exception handler
-            int id = std::stoi(params["id"]);
+            auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+
             auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                 return dto.Id == id;
                 });
@@ -111,7 +113,7 @@ namespace MuppetExpress {
                 json jsonBody = json::parse(req.body());
                 DTO newItem = jsonBody.get<DTO>();
 
-                newItem.Id = ++idCounter_;
+                newItem.Id = IdTraits<typename DTO::IdType>::generateId();
 
                 dataStore_.push_back(newItem);
 
@@ -129,7 +131,8 @@ namespace MuppetExpress {
         // PUT (Update an item by ID)
         void handleUpdate(Request& req, Response& res, Parameters& params) {
             try {
-                int id = std::stoi(params["id"]);
+                auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+
                 auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                     return dto.Id == id;
                     });
@@ -160,7 +163,8 @@ namespace MuppetExpress {
 
         // DELETE an item by ID
         void handleDelete(Request& req, Response& res, Parameters& params) {
-            int id = std::stoi(params["id"]);
+            auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+
             auto it = std::remove_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                 return dto.Id == id;
                 });

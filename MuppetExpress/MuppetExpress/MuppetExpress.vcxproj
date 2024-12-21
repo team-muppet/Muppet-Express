@@ -138,6 +138,7 @@
     <ClCompile Include="StaticFileMiddleware.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="IdTraits.hpp" />
     <ClInclude Include="MiddlewareManager.hpp" />
     <ClInclude Include="Definitions.hpp" />
     <ClInclude Include="PokemonModel.hpp" />

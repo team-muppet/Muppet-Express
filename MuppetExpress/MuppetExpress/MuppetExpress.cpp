@@ -1,7 +1,7 @@
 #include "Server.hpp"
 #include "StaticFileMiddleware.hpp"
 #include "RestController.hpp"
-
+#include "IdTraits.hpp"
 
 using namespace MuppetExpress;
 
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 
 	std::variant<std::string, int> port;
 
-	constexpr int portnr = 2222;
+	constexpr int portnr = 2000;
 
 	if constexpr (portnr != NULL) {
 		std::cout << "from constexpr Port is 2000" << std::endl;
@@ -104,15 +104,15 @@ int main(int argc, char** argv) {
 
 	server.MapPost("/echo", EchoFunctor());
 
-	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, std::size_t& idCounter){
+	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore){
 			try
 			{
 				datastore.push_back("1,pikachu"_pokemon);
-				++idCounter;
+				IdTraits<typename Pokemon::IdType>::generateId();
 				datastore.push_back("2,bulbasaur"_pokemon);
-				++idCounter;
+				IdTraits<typename Pokemon::IdType>::generateId();
 				datastore.push_back("a,charmander"_pokemon);
-				++idCounter;
+				IdTraits<typename Pokemon::IdType>::generateId();
 			}
 			catch (const std::exception& e)
 			{

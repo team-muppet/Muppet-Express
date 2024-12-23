@@ -145,6 +145,7 @@
     <ClInclude Include="RestController.hpp" />
     <ClInclude Include="Router.hpp" />
     <ClInclude Include="Server.hpp" />
+    <ClInclude Include="StatsResourse.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

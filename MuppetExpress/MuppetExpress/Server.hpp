@@ -31,12 +31,12 @@ app.listen(port, () => {
 struct portnumberVisitor
 {
 	int operator()(int portnumber) {
-		std::cout << portnumber << std::endl;
+		std::cout << "Portnumber from int: " << portnumber << std::endl;
 		portnumber = std::clamp(portnumber, 0, 65535);
 		return portnumber;
 	}
 	int operator()(std::string portnumber) {
-		std::cout << portnumber << std::endl;
+		std::cout << "Portnumber from string/param args: " << portnumber << std::endl;
 		int portnumberFromString = std::clamp(std::stoi(portnumber), 0, 65535);
 		return portnumberFromString;
 	}

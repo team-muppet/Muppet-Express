@@ -1,6 +1,9 @@
 #include "Server.hpp"
 #include "StaticFileMiddleware.hpp"
 #include "RestController.hpp"
+//#include "PmrDatastore.hpp"
+#include <memory_resource>
+#include "StatsResourse.hpp"
 
 
 using namespace MuppetExpress;
@@ -22,6 +25,16 @@ struct EchoFunctor {
 // Main function
 int main(int argc, char** argv) {
 
+	StatsResource sr;
+
+	std::pmr::vector<Pokemon> PMRtest({ "1,pikachu"_pokemon, "2,bulbasaur"_pokemon, "3,charmander"_pokemon }, &sr);
+
+	sr.printStats();
+
+	PMRtest.push_back("4,squirtle"_pokemon);
+
+	sr.printStats();
+
 	auto exceptionHandler = [](Request& req, Response& res, std::function<void()> routehandler) {
 		try {
 			// Handle request with middleware
@@ -39,16 +52,14 @@ int main(int argc, char** argv) {
 
 	std::variant<std::string, int> port;
 
-	constexpr int portnr = 2222;
+	constexpr int portnr = 2000;
 
 	if constexpr (portnr != NULL) {
-		std::cout << "from constexpr Port is 2000" << std::endl;
 		port = portnr;
 	}
 	else {
 		for (int i = 1; i < argc; ++i) {
 			std::string arg = argv[i];
-
 			if (arg == "-port" && (i + 1 < argc)) {
 				port = argv[++i];
 			}
@@ -104,7 +115,24 @@ int main(int argc, char** argv) {
 
 	server.MapPost("/echo", EchoFunctor());
 
-	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, std::size_t& idCounter){
+	RestController<Pokemon, std::pmr::vector> pokemonController(server, "/pokemon",
+		[](std::pmr::vector<Pokemon>& datastore, std::size_t& idCounter) {
+		try
+		{
+			datastore.push_back("1,pikachu"_pokemon);
+			++idCounter;
+			datastore.push_back("2,bulbasaur"_pokemon);
+			++idCounter;
+			datastore.push_back("a,charmander"_pokemon);
+			++idCounter;
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
+		});
+
+	/*RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, std::size_t& idCounter){
 			try
 			{
 				datastore.push_back("1,pikachu"_pokemon);
@@ -118,7 +146,7 @@ int main(int argc, char** argv) {
 			{
 				std::cerr << "Error: " << e.what() << std::endl;
 			}
-	});
+	});*/
 
 	server.RunServer();
 

@@ -27,9 +27,6 @@
     <ClCompile Include="PmrDatastore.hpp">
       <Filter>Header Files\MuppetExpress</Filter>
     </ClCompile>
-    <ClCompile Include="PokemonLiteral.hpp">
-      <Filter>Header Files\MuppetExpress</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.hpp">
@@ -52,6 +49,9 @@
     </ClInclude>
     <ClInclude Include="RestController.hpp">
       <Filter>Header Files\MuppetExpress</Filter>
+    </ClInclude>
+    <ClInclude Include="StatsResourse.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

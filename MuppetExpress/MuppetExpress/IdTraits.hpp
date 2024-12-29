@@ -2,6 +2,8 @@
 
 #include <string>
 #include <algorithm>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 
 namespace MuppetExpress {
@@ -23,7 +25,7 @@ namespace MuppetExpress {
 	template <>
 	struct IdTraits<std::string> {
 		static std::string generateId() {
-			// Generate something Guid like in c++
+			return boost::uuids::to_string(boost::uuids::random_generator()());
 		}
 
 		static std::string convert(const std::string& idStr) {

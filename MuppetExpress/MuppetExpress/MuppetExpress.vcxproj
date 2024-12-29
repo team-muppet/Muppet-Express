@@ -141,6 +141,7 @@
     <ClInclude Include="IdTraits.hpp" />
     <ClInclude Include="MiddlewareManager.hpp" />
     <ClInclude Include="Definitions.hpp" />
+    <ClInclude Include="PersonModel.hpp" />
     <ClInclude Include="PokemonModel.hpp" />
     <ClInclude Include="Request.hpp" />
     <ClInclude Include="RestController.hpp" />

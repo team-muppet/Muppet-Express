@@ -4,7 +4,6 @@
 #include "Server.hpp"
 #include <vector>
 #include <algorithm>
-#include "PokemonModel.hpp"
 #include "IdTraits.hpp"
 
 namespace MuppetExpress {

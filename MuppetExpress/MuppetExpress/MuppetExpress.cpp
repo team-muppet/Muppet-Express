@@ -2,6 +2,8 @@
 #include "StaticFileMiddleware.hpp"
 #include "RestController.hpp"
 #include "IdTraits.hpp"
+#include "PokemonModel.hpp"
+#include "PersonModel.hpp"
 
 using namespace MuppetExpress;
 
@@ -119,6 +121,8 @@ int main(int argc, char** argv) {
 				std::cerr << "Error: " << e.what() << std::endl;
 			}
 	});
+
+	RestController<Person, std::list> personController(server, "/person");
 
 	server.RunServer();
 

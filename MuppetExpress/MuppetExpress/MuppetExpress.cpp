@@ -8,6 +8,7 @@
 #include "IdTraits.hpp"
 #include "PokemonModel.hpp"
 #include "PersonModel.hpp"
+#include "IdTraits.hpp"
 
 using namespace MuppetExpress;
 
@@ -61,10 +62,15 @@ int main(int argc, char** argv) {
 		port = portnr;
 	}
 	else {
-		for (int i = 1; i < argc; ++i) {
-			std::string arg = argv[i];
-			if (arg == "-port" && (i + 1 < argc)) {
-				port = argv[++i];
+		if (argc == 0) {
+			port = "2001";
+		}
+		else {
+			for (int i = 1; i < argc; ++i) {
+				std::string arg = argv[i];
+				if (arg == "-port") {
+					port = argv[++i];
+				}
 			}
 		}
 	}
@@ -118,7 +124,7 @@ int main(int argc, char** argv) {
 
 	server.MapPost("/echo", EchoFunctor());
 
-	RestController<Pokemon, std::pmr::vector> pokemonController(server, "/pokemon",
+	/*RestController<Pokemon, std::pmr::vector> pokemonController(server, "/pokemon",
 		[](std::pmr::vector<Pokemon>& datastore, std::size_t& idCounter) {
 		try
 		{
@@ -133,10 +139,35 @@ int main(int argc, char** argv) {
 		{
 			std::cerr << "Error: " << e.what() << std::endl;
 		}
-		});
+		});*/
 
-	/*RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, std::size_t& idCounter){
-	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore){
+	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore) {
+		try
+		{
+			datastore.push_back("1,pikachu"_pokemon);
+			//++idCounter;
+			datastore.push_back("2,bulbasaur"_pokemon);
+			//++idCounter;
+			datastore.push_back("a,charmander"_pokemon);
+			//++idCounter;
+
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
+
+		if (!datastore.empty()) {
+			auto maxIt = std::max_element(
+				datastore.begin(), datastore.end(),
+				[](const Pokemon& a, const Pokemon& b) {
+					return a.Id < b.Id;
+				}
+			);
+			IdTraits<typename Pokemon::IdType>::updateCounter((*maxIt).Id);
+			}		
+		});
+	/*RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore){
 			try
 			{
 				datastore.push_back("1,pikachu"_pokemon);
@@ -153,6 +184,8 @@ int main(int argc, char** argv) {
 	});*/
 
 	//RestController<Person, std::list> personController(server, "/person");
+
+	//RestController<Pokemon, std::list> personController(server, "/pokemon");
 
 	server.RunServer();
 

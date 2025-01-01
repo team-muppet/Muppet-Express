@@ -20,6 +20,11 @@ namespace MuppetExpress {
 		static int convert(const std::string& idStr) {
 			return std::stoi(idStr);
 		}
+
+		static void updateCounter(int id) {
+			do {
+			} while (id > generateId());
+		}
 	};
 
 	template <>

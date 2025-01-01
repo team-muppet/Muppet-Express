@@ -53,5 +53,11 @@
     <ClInclude Include="StatsResourse.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IdTraits.hpp">
+      <Filter>Header Files\MuppetExpress</Filter>
+    </ClInclude>
+    <ClInclude Include="PersonModel.hpp">
+      <Filter>Header Files\MuppetExpress</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

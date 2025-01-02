@@ -40,7 +40,7 @@ namespace MuppetExpress {
         requires IsDatastore<Datastore, DTO> && IsDTO<DTO>
     class RestController {
     public:
-        RestController(Server& server, const std::string& basePath, std::optional<std::function<void(Datastore<DTO>& datastore, IdTraits<typename DTO::IdType> idGenerator)>> seedFunction = std::nullopt)
+        RestController(Server& server, const std::string& basePath, std::optional<std::function<void(Datastore<DTO>& datastore, IdTraits<typename DTO::IdType>& idGenerator)>> seedFunction = std::nullopt)
             : server_(server), basePath_(basePath) {
             setupHandlers();
             if (seedFunction)

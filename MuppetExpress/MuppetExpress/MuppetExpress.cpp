@@ -27,7 +27,7 @@ struct EchoFunctor {
 
 // Main function
 int main(int argc, char** argv) {
-	std::array<std::byte, 100> buffer;
+	std::array<std::byte, 206> buffer; // 200 bytes of memory, remember SSO in pmr::string
 	StatsResource sr;
 	
 	std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), std::pmr::null_memory_resource() };
@@ -146,6 +146,7 @@ int main(int argc, char** argv) {
 		});*/
 
 	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr);
+	//RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon");
 
 
 	//RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore) {

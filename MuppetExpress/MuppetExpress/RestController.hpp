@@ -35,17 +35,37 @@ namespace MuppetExpress {
         { json(store) } -> std::same_as<json>;
     };
 
-    // template <IsDTO DTO>
+    //// template <IsDTO DTO>
+    //template <typename DTO, template <typename> typename Datastore>
+    //    requires IsDatastore<Datastore, DTO> && IsDTO<DTO>
+    //class RestController {
+    //public:
+    //    RestController(Server& server, const std::string& basePath, std::pmr::memory_resource* mr = std::pmr::get_default_resource(), std::optional<std::function<void(Datastore<DTO>& datastore)>> seedFunction = std::nullopt)
+    //        : server_(server), basePath_(basePath) _mr(mr) {
+    //        setupHandlers();
+    //        if (seedFunction)
+    //        {
+				//seedFunction.value()(dataStore_);
+    //        }
+    //    }
     template <typename DTO, template <typename> typename Datastore>
-        requires IsDatastore<Datastore, DTO> && IsDTO<DTO>
-    class RestController {
+        requires IsDatastore<Datastore, DTO>&& IsDTO<DTO>
+    class RestController 
+    {
     public:
-        RestController(Server& server, const std::string& basePath, std::optional<std::function<void(Datastore<DTO>& datastore)>> seedFunction = std::nullopt)
-            : server_(server), basePath_(basePath) {
+        // The constructor
+        RestController(Server& server,
+            const std::string& basePath,
+            std::pmr::memory_resource* mr = std::pmr::get_default_resource(),
+            std::optional<std::function<void(Datastore<DTO>&)>> seedFunction = std::nullopt)
+            : server_(server)
+            , basePath_(basePath)
+            , _mr(mr)
+            , dataStore_(makeDataStore())  // Construct dataStore_ appropriately
+        {
             setupHandlers();
-            if (seedFunction)
-            {
-				seedFunction.value()(dataStore_);
+            if (seedFunction) {
+                seedFunction.value()(dataStore_);
             }
         }
 
@@ -53,6 +73,19 @@ namespace MuppetExpress {
         Server& server_;
         std::string basePath_;
         Datastore<DTO> dataStore_;
+        std::pmr::memory_resource* _mr;
+
+        Datastore<DTO> makeDataStore() {
+            if constexpr (std::is_same_v<Datastore<DTO>, std::pmr::vector<DTO>> ||
+                std::is_same_v<Datastore<DTO>, std::pmr::list<DTO>>) {
+                // Uses the container's (allocator) constructor that takes pmr::memory_resource*
+                return Datastore<DTO>(_mr);
+            }
+            else {
+                // e.g. std::vector<DTO>, std::list<DTO>, or anything else
+                return Datastore<DTO>{};
+            }
+        }
 
         void setupHandlers() {
             server_.MapGet(basePath_, [this](Request& req, Response& res) {
@@ -78,17 +111,17 @@ namespace MuppetExpress {
 
         // GET all items
         void handleGetAll(Request& req, Response& res) {
-            res.result(http::status::ok);
+            /*res.result(http::status::ok);
             res.set(http::field::content_type, "application/json");
 
             json responseBody = dataStore_;
-            res.body() = responseBody.dump();
+            res.body() = responseBody.dump();*/
         }
 
         // GET item by ID
         void handleGetById(Request& req, Response& res, Parameters& params) {
             // Keep this so we can trigger global exception handler
-            auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+            /*auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
 
             auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                 return dto.Id == id;
@@ -103,66 +136,66 @@ namespace MuppetExpress {
                 res.result(http::status::not_found);
                 res.set(http::field::content_type, "application/json");
                 res.body() = R"({ "error": "Item not found" })";
-            }
+            }*/
         }
 
-        // POST (Create a new item)
-        void handleCreate(Request& req, Response& res) {
-            try {
-                json jsonBody = json::parse(req.body());
-                DTO newItem = jsonBody.get<DTO>();
+        //// POST (Create a new item)
+        //void handleCreate(Request& req, Response& res) {
+        //    try {
+        //        json jsonBody = json::parse(req.body());
+        //        DTO newItem = jsonBody.get<DTO>();
 
-                newItem.Id = IdTraits<typename DTO::IdType>::generateId();
+        //        newItem.Id = IdTraits<typename DTO::IdType>::generateId();
 
-                dataStore_.push_back(newItem);
+        //        dataStore_.push_back(newItem);
 
-                res.result(http::status::created);
-                res.set(http::field::content_type, "application/json");
-                res.body() = json(newItem).dump();
-            }
-            catch (const std::exception& e) {
-                res.result(http::status::bad_request);
-                res.set(http::field::content_type, "application/json");
-                res.body() = json{ {"error", e.what()} }.dump();
-            }
-        }
+        //        res.result(http::status::created);
+        //        res.set(http::field::content_type, "application/json");
+        //        res.body() = json(newItem).dump();
+        //    }
+        //    catch (const std::exception& e) {
+        //        res.result(http::status::bad_request);
+        //        res.set(http::field::content_type, "application/json");
+        //        res.body() = json{ {"error", e.what()} }.dump();
+        //    }
+        //}
 
         // PUT (Update an item by ID)
         void handleUpdate(Request& req, Response& res, Parameters& params) {
-            try {
-                auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+            //try {
+            //    auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
 
-                auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
-                    return dto.Id == id;
-                    });
+            //    auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
+            //        return dto.Id == id;
+            //        });
 
-                if (it != dataStore_.end()) {
-                    json jsonBody = json::parse(req.body());
-                    DTO updatedItem = jsonBody.get<DTO>();
-                    updatedItem.Id = id;  // Keep the ID the same
+            //    if (it != dataStore_.end()) {
+            //        json jsonBody = json::parse(req.body());
+            //        DTO updatedItem = jsonBody.get<DTO>();
+            //        updatedItem.Id = id;  // Keep the ID the same
 
-                    *it = updatedItem;
+            //        *it = updatedItem;
 
-                    res.result(http::status::ok);
-                    res.set(http::field::content_type, "application/json");
-                    res.body() = json(updatedItem).dump();
-                }
-                else {
-                    res.result(http::status::not_found);
-                    res.set(http::field::content_type, "application/json");
-                    res.body() = R"({ "error": "Item not found" })";
-                }
-            }
-            catch (const std::exception& e) {
-                res.result(http::status::bad_request);
-                res.set(http::field::content_type, "application/json");
-                res.body() = json{ {"error", e.what()} }.dump();
-            }
+            //        res.result(http::status::ok);
+            //        res.set(http::field::content_type, "application/json");
+            //        res.body() = json(updatedItem).dump();
+            //    }
+            //    else {
+            //        res.result(http::status::not_found);
+            //        res.set(http::field::content_type, "application/json");
+            //        res.body() = R"({ "error": "Item not found" })";
+            //    }
+            //}
+            //catch (const std::exception& e) {
+            //    res.result(http::status::bad_request);
+            //    res.set(http::field::content_type, "application/json");
+            //    res.body() = json{ {"error", e.what()} }.dump();
+            //}
         }
 
         // DELETE an item by ID
         void handleDelete(Request& req, Response& res, Parameters& params) {
-            auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+            /*auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
 
             auto it = std::remove_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                 return dto.Id == id;
@@ -178,8 +211,44 @@ namespace MuppetExpress {
                 res.result(http::status::not_found);
                 res.set(http::field::content_type, "application/json");
                 res.body() = R"({ "error": "Item not found" })";
+            }*/
+        }
+
+        //pmr specifik stuff
+        // Example of manually parsing JSON into a pmr-aware DTO
+        void handleCreate(Request& req, Response& res) {
+            try {
+                auto j = json::parse(req.body());
+
+
+                if constexpr (std::is_same_v<Datastore<DTO>, std::pmr::vector<DTO>> ||
+                    std::is_same_v<Datastore<DTO>, std::pmr::list<DTO>>) {
+                 
+                    auto name = j.at("Name").get<std::string>();
+                    auto id = IdTraits<typename DTO::IdType>::generateId();
+
+
+                    DTO newItem{ id, name, _mr };
+                    dataStore_.push_back(std::move(newItem));
+                }
+                else {
+
+                    DTO newItem = j.get<DTO>();
+                    newItem.Id = IdTraits<typename DTO::IdType>::generateId();
+                    dataStore_.push_back(newItem);
+                }
+
+                res.result(http::status::created);
+                res.set(http::field::content_type, "application/json");
+                res.body() = j.dump();
+            }
+            catch (const std::exception& e) {
+                res.result(http::status::bad_request);
+                res.set(http::field::content_type, "application/json");
+                res.body() = json{ {"error", e.what()} }.dump();
             }
         }
+
     };
 
 }  // namespace MuppetExpress

@@ -8,7 +8,6 @@
 #include "IdTraits.hpp"
 #include "PokemonModel.hpp"
 #include "PersonModel.hpp"
-#include "IdTraits.hpp"
 
 using namespace MuppetExpress;
 
@@ -28,8 +27,13 @@ struct EchoFunctor {
 
 // Main function
 int main(int argc, char** argv) {
-
+	std::array<std::byte, 4096> buffer;
 	StatsResource sr;
+	
+	std::pmr::monotonic_buffer_resource mbr(buffer.data(), buffer.size(), &sr);
+	std::pmr::synchronized_pool_resource spr(&mbr);
+
+	/*StatsResource sr;
 
 	std::pmr::vector<Pokemon> PMRtest({ "1,pikachu"_pokemon, "2,bulbasaur"_pokemon, "3,charmander"_pokemon }, &sr);
 
@@ -37,7 +41,7 @@ int main(int argc, char** argv) {
 
 	PMRtest.push_back("4,squirtle"_pokemon);
 
-	sr.printStats();
+	sr.printStats();*/
 
 	auto exceptionHandler = [](Request& req, Response& res, std::function<void()> routehandler) {
 		try {
@@ -141,32 +145,35 @@ int main(int argc, char** argv) {
 		}
 		});*/
 
-	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore) {
-		try
-		{
-			datastore.push_back("1,pikachu"_pokemon);
-			//++idCounter;
-			datastore.push_back("2,bulbasaur"_pokemon);
-			//++idCounter;
-			datastore.push_back("a,charmander"_pokemon);
-			//++idCounter;
+	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &spr);
 
-		}
-		catch (const std::exception& e)
-		{
-			std::cerr << "Error: " << e.what() << std::endl;
-		}
 
-		if (!datastore.empty()) {
-			auto maxIt = std::max_element(
-				datastore.begin(), datastore.end(),
-				[](const Pokemon& a, const Pokemon& b) {
-					return a.Id < b.Id;
-				}
-			);
-			IdTraits<typename Pokemon::IdType>::updateCounter((*maxIt).Id);
-			}		
-		});
+	//RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore) {
+	//	try
+	//	{
+	//		datastore.push_back("1,pikachu"_pokemon);
+	//		//++idCounter;
+	//		datastore.push_back("2,bulbasaur"_pokemon);
+	//		//++idCounter;
+	//		datastore.push_back("a,charmander"_pokemon);
+	//		//++idCounter;
+
+	//	}
+	//	catch (const std::exception& e)
+	//	{
+	//		std::cerr << "Error: " << e.what() << std::endl;
+	//	}
+
+	//	if (!datastore.empty()) {
+	//		auto maxIt = std::max_element(
+	//			datastore.begin(), datastore.end(),
+	//			[](const Pokemon& a, const Pokemon& b) {
+	//				return a.Id < b.Id;
+	//			}
+	//		);
+	//		IdTraits<typename Pokemon::IdType>::updateCounter((*maxIt).Id);
+	//		}		
+	//	});
 	/*RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore){
 			try
 			{

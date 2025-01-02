@@ -47,7 +47,7 @@ namespace MuppetExpress {
         RestController(
             Server& server,
             const std::string& basePath,
-            allocator_type alloc = {},
+            allocator_type alloc,
             std::optional<std::function<void(Datastore<DTO>& datastore, IdTraits<typename DTO::IdType>& idGenerator)>> seedFunction = std::nullopt)
             : server_(server)
             , basePath_(basePath)
@@ -154,9 +154,10 @@ namespace MuppetExpress {
 
                 newItem.Id = idGenerator_.generateId();
 
-                if constexpr (std::is_same_v<DTO, PmrPokemon>)
+                if constexpr (requires { Datastore<DTO>(_alloc); })
 				{
-                    dataStore_.emplace_back(newItem.Id, newItem.Name, _alloc.resource());
+                    //dataStore_.emplace_back(newItem.Id, newItem.Name, _alloc.resource());
+                    dataStore_.emplace_back(newItem, _alloc.resource());
 				}
 				else
 				{

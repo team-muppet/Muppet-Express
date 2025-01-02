@@ -27,7 +27,7 @@ struct EchoFunctor {
 
 // Main function
 int main(int argc, char** argv) {
-	std::array<std::byte, 4096> buffer; // 200 bytes of memory, remember SSO in pmr::string
+	std::array<std::byte, 1096> buffer; // 200 bytes of memory, remember SSO in pmr::string
 	StatsResource sr;
 
 	std::pmr::pool_options opts;
@@ -134,24 +134,24 @@ int main(int argc, char** argv) {
 
 	server.MapPost("/echo", EchoFunctor());
 
-	/*RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, IdTraits<typename Pokemon::IdType>& idGenerator) {
+	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr, [&mbr](std::pmr::vector<PmrPokemon>& datastore, IdTraits<typename PmrPokemon::IdType>& idGenerator) {
 		try
 		{
-			datastore.push_back("1,pikachu"_pokemon);
+			datastore.emplace_back("1,pikachu"_pmrPokemon, &mbr);
 			idGenerator.generateId();
-			datastore.push_back("2,bulbasaur"_pokemon);
+			datastore.emplace_back("2,bulbasaur"_pmrPokemon, &mbr);
 			idGenerator.generateId();
-			datastore.push_back("a,charmander"_pokemon);
+			datastore.emplace_back("a,charmander"_pmrPokemon, &mbr);
 			idGenerator.generateId();
 		}
 		catch (const std::exception& e)
 		{
 			std::cerr << "Error: " << e.what() << std::endl;
 		}
-	});*/
+	});
 
 	//RestController<Person, std::list> personController(server, "/person");
-	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr);
+	//RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr);
 
 	//RestController<Pokemon, std::list> personController(server, "/pokemon");
 

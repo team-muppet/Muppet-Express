@@ -30,6 +30,13 @@ struct PmrPokemon {
         , Name(name, mr) // Construct pmr::string with the provided resource
     {
     }
+
+	// copy constructor
+	PmrPokemon(const PmrPokemon& other, std::pmr::memory_resource* mr = std::pmr::get_default_resource())
+		: Id(other.Id)
+		, Name(other.Name, mr)
+	{
+	}
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(PmrPokemon, Id, Name)

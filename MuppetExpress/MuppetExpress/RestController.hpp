@@ -48,7 +48,7 @@ namespace MuppetExpress {
             Server& server,
             const std::string& basePath,
             allocator_type alloc = {},
-            std::optional<std::function<void(Datastore<DTO>&)>> seedFunction = std::nullopt)
+            std::optional<std::function<void(Datastore<DTO>& datastore, IdTraits<typename DTO::IdType>& idGenerator)>> seedFunction = std::nullopt)
             : server_(server)
             , basePath_(basePath)
             , _alloc(alloc) // _mr(mr)
@@ -66,7 +66,7 @@ namespace MuppetExpress {
             }
             setupHandlers();
             if (seedFunction) {
-                seedFunction.value()(dataStore_);
+                seedFunction.value()(dataStore_, idGenerator_);
             }
         }
 
@@ -74,9 +74,10 @@ namespace MuppetExpress {
         Server& server_;
         std::string basePath_;
         Datastore<DTO> dataStore_;
-        std::pmr::memory_resource* _mr;
+        //std::pmr::memory_resource* _mr;
         allocator_type _alloc;
         bool isPmr_ = false;
+        IdTraits<typename DTO::IdType> idGenerator_ = IdTraits<typename DTO::IdType>();
 
         void setupHandlers() {
             server_.MapGet(basePath_, [this](Request& req, Response& res) {
@@ -112,7 +113,7 @@ namespace MuppetExpress {
         // GET item by ID
         void handleGetById(Request& req, Response& res, Parameters& params) {
             // Keep this so we can trigger global exception handler
-            auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+            auto id = idGenerator_.convert(params["id"]);
 
             auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                 return dto.Id == id;
@@ -136,7 +137,7 @@ namespace MuppetExpress {
                 json jsonBody = json::parse(req.body());
                 DTO newItem = jsonBody.get<DTO>();
 
-                newItem.Id = IdTraits<typename DTO::IdType>::generateId();
+                newItem.Id = idGenerator_.generateId();
 
 				if (isPmr_)
 				{
@@ -161,7 +162,7 @@ namespace MuppetExpress {
         // PUT (Update an item by ID) not pmr safe
         void handleUpdate(Request& req, Response& res, Parameters& params) {
             try {
-                auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+                auto id = idGenerator_.convert(params["id"]);
 
                 auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                     return dto.Id == id;
@@ -193,7 +194,7 @@ namespace MuppetExpress {
 
         // DELETE an item by I, pmr safe
         void handleDelete(Request& req, Response& res, Parameters& params) {
-           auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+            auto id = idGenerator_.convert(params["id"]);
 
             auto it = std::remove_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                 return dto.Id == id;

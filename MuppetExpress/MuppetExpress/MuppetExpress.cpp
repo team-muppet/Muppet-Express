@@ -100,19 +100,19 @@ int main(int argc, char** argv) {
 		res.result(http::status::unauthorized);
 		next();
 		std::cout << "After 1: " << res.result() << std::endl;
-		});
+	});
 
 	server.Use([](Request& req, Response& res, std::function<void()> next) {
 		std::cout << "Before 2: " << res.result() << std::endl;
 		next();
 		std::cout << "After 2: " << res.result() << std::endl;
-		});
+	});
 
 	server.MapGet("/test", [](Request& req, Response& res) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
 		res.body() = "Hello Test!";
-		});
+	});
 
 	auto handler = [](Request& req, Response& res, Parameters& params) {
 		res.result(http::status::ok);
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
 		}
 
 		res.body() = str;
-		};
+	};
 
 	server.MapGet("/fish/{id}/{stupid}", handler);
 	server.MapGet("/fish/{id}", handler);
@@ -134,68 +134,21 @@ int main(int argc, char** argv) {
 
 	server.MapPost("/echo", EchoFunctor());
 
-	/*RestController<Pokemon, std::pmr::vector> pokemonController(server, "/pokemon",
-		[](std::pmr::vector<Pokemon>& datastore, std::size_t& idCounter) {
+	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, IdTraits<typename Pokemon::IdType>& idGenerator) {
 		try
 		{
 			datastore.push_back("1,pikachu"_pokemon);
-			++idCounter;
+			idGenerator.generateId();
 			datastore.push_back("2,bulbasaur"_pokemon);
-			++idCounter;
+			idGenerator.generateId();
 			datastore.push_back("a,charmander"_pokemon);
-			++idCounter;
+			idGenerator.generateId();
 		}
 		catch (const std::exception& e)
 		{
 			std::cerr << "Error: " << e.what() << std::endl;
 		}
-		});*/
-
-	//RestController<PmrPokemon, std::pmr::vector> pokemonController(&mbr, server, "/pokemon");
-	//RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon");
-
-
-	//RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore) {
-	//	try
-	//	{
-	//		datastore.push_back("1,pikachu"_pokemon);
-	//		//++idCounter;
-	//		datastore.push_back("2,bulbasaur"_pokemon);
-	//		//++idCounter;
-	//		datastore.push_back("a,charmander"_pokemon);
-	//		//++idCounter;
-
-	//	}
-	//	catch (const std::exception& e)
-	//	{
-	//		std::cerr << "Error: " << e.what() << std::endl;
-	//	}
-
-	//	if (!datastore.empty()) {
-	//		auto maxIt = std::max_element(
-	//			datastore.begin(), datastore.end(),
-	//			[](const Pokemon& a, const Pokemon& b) {
-	//				return a.Id < b.Id;
-	//			}
-	//		);
-	//		IdTraits<typename Pokemon::IdType>::updateCounter((*maxIt).Id);
-	//		}		
-	//	});
-	/*RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore){
-			try
-			{
-				datastore.push_back("1,pikachu"_pokemon);
-				IdTraits<typename Pokemon::IdType>::generateId();
-				datastore.push_back("2,bulbasaur"_pokemon);
-				IdTraits<typename Pokemon::IdType>::generateId();
-				datastore.push_back("a,charmander"_pokemon);
-				IdTraits<typename Pokemon::IdType>::generateId();
-			}
-			catch (const std::exception& e)
-			{
-				std::cerr << "Error: " << e.what() << std::endl;
-			}
-	});*/
+	});
 
 	//RestController<Person, std::list> personController(server, "/person");
 	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr);

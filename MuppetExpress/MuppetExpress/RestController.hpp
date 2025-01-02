@@ -56,7 +56,7 @@ namespace MuppetExpress {
             if constexpr (requires { Datastore<DTO>(_alloc); }) {
                 // This means the container (e.g. std::pmr::vector<DTO>)
                 // has a constructor taking a polymorphic_allocator
-				isPmr_ = true;
+				//isPmr_ = true;
                 dataStore_ = Datastore<DTO>(_alloc);
             }
             else {
@@ -70,13 +70,28 @@ namespace MuppetExpress {
             }
         }
 
+        RestController(
+            Server& server,
+            const std::string& basePath,
+            std::optional<std::function<void(Datastore<DTO>& datastore, IdTraits<typename DTO::IdType>& idGenerator)>> seedFunction = std::nullopt)
+            : server_(server)
+            , basePath_(basePath)
+        {
+            dataStore_ = Datastore<DTO>{};
+ 
+            setupHandlers();
+            if (seedFunction) {
+                seedFunction.value()(dataStore_, idGenerator_);
+            }
+        }
+
     private:
         Server& server_;
         std::string basePath_;
         Datastore<DTO> dataStore_;
         //std::pmr::memory_resource* _mr;
         allocator_type _alloc;
-        bool isPmr_ = false;
+        //bool isPmr_ = false;
         IdTraits<typename DTO::IdType> idGenerator_ = IdTraits<typename DTO::IdType>();
 
         void setupHandlers() {
@@ -139,7 +154,7 @@ namespace MuppetExpress {
 
                 newItem.Id = idGenerator_.generateId();
 
-				if (isPmr_)
+                if constexpr (std::is_same_v<DTO, PmrPokemon>)
 				{
                     dataStore_.emplace_back(newItem.Id, newItem.Name, _alloc.resource());
 				}

@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
 
 	server.MapPost("/echo", EchoFunctor());
 
-	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, IdTraits<typename Pokemon::IdType>& idGenerator) {
+	/*RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, IdTraits<typename Pokemon::IdType>& idGenerator) {
 		try
 		{
 			datastore.push_back("1,pikachu"_pokemon);
@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
 		{
 			std::cerr << "Error: " << e.what() << std::endl;
 		}
-	});
+	});*/
 
 	//RestController<Person, std::list> personController(server, "/person");
 	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr);

@@ -40,12 +40,12 @@ namespace MuppetExpress {
         requires IsDatastore<Datastore, DTO> && IsDTO<DTO>
     class RestController {
     public:
-        RestController(Server& server, const std::string& basePath, std::optional<std::function<void(Datastore<DTO>& datastore)>> seedFunction = std::nullopt)
+        RestController(Server& server, const std::string& basePath, std::optional<std::function<void(Datastore<DTO>& datastore, IdTraits<typename DTO::IdType> idGenerator)>> seedFunction = std::nullopt)
             : server_(server), basePath_(basePath) {
             setupHandlers();
             if (seedFunction)
             {
-				seedFunction.value()(dataStore_);
+				seedFunction.value()(dataStore_, idGenerator_);
             }
         }
 
@@ -53,6 +53,7 @@ namespace MuppetExpress {
         Server& server_;
         std::string basePath_;
         Datastore<DTO> dataStore_;
+        IdTraits<typename DTO::IdType> idGenerator_ = IdTraits<typename DTO::IdType>();
 
         void setupHandlers() {
             server_.MapGet(basePath_, [this](Request& req, Response& res) {
@@ -88,7 +89,7 @@ namespace MuppetExpress {
         // GET item by ID
         void handleGetById(Request& req, Response& res, Parameters& params) {
             // Keep this so we can trigger global exception handler
-            auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+            auto id = idGenerator_.convert(params["id"]);
 
             auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                 return dto.Id == id;
@@ -112,7 +113,7 @@ namespace MuppetExpress {
                 json jsonBody = json::parse(req.body());
                 DTO newItem = jsonBody.get<DTO>();
 
-                newItem.Id = IdTraits<typename DTO::IdType>::generateId();
+                newItem.Id = idGenerator_.generateId();
 
                 dataStore_.push_back(newItem);
 
@@ -130,7 +131,7 @@ namespace MuppetExpress {
         // PUT (Update an item by ID)
         void handleUpdate(Request& req, Response& res, Parameters& params) {
             try {
-                auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+                auto id = idGenerator_.convert(params["id"]);
 
                 auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                     return dto.Id == id;
@@ -162,7 +163,7 @@ namespace MuppetExpress {
 
         // DELETE an item by ID
         void handleDelete(Request& req, Response& res, Parameters& params) {
-            auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+            auto id = idGenerator_.convert(params["id"]);
 
             auto it = std::remove_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
                 return dto.Id == id;

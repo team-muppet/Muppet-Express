@@ -72,19 +72,19 @@ int main(int argc, char** argv) {
 		res.result(http::status::unauthorized);
 		next();
 		std::cout << "After 1: " << res.result() << std::endl;
-		});
+	});
 
 	server.Use([](Request& req, Response& res, std::function<void()> next) {
 		std::cout << "Before 2: " << res.result() << std::endl;
 		next();
 		std::cout << "After 2: " << res.result() << std::endl;
-		});
+	});
 
 	server.MapGet("/test", [](Request& req, Response& res) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
 		res.body() = "Hello Test!";
-		});
+	});
 
 	auto handler = [](Request& req, Response& res, Parameters& params) {
 		res.result(http::status::ok);
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
 		}
 
 		res.body() = str;
-		};
+	};
 
 	server.MapGet("/fish/{id}/{stupid}", handler);
 	server.MapGet("/fish/{id}", handler);
@@ -106,20 +106,20 @@ int main(int argc, char** argv) {
 
 	server.MapPost("/echo", EchoFunctor());
 
-	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore){
-			try
-			{
-				datastore.push_back("1,pikachu"_pokemon);
-				IdTraits<typename Pokemon::IdType>::generateId();
-				datastore.push_back("2,bulbasaur"_pokemon);
-				IdTraits<typename Pokemon::IdType>::generateId();
-				datastore.push_back("a,charmander"_pokemon);
-				IdTraits<typename Pokemon::IdType>::generateId();
-			}
-			catch (const std::exception& e)
-			{
-				std::cerr << "Error: " << e.what() << std::endl;
-			}
+	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, IdTraits<typename Pokemon::IdType> idGenerator) {
+		try
+		{
+			datastore.push_back("1,pikachu"_pokemon);
+			idGenerator.generateId();
+			datastore.push_back("2,bulbasaur"_pokemon);
+			idGenerator.generateId();
+			datastore.push_back("a,charmander"_pokemon);
+			idGenerator.generateId();
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
 	});
 
 	RestController<Person, std::list> personController(server, "/person");

@@ -56,7 +56,7 @@ namespace MuppetExpress {
         // The constructor
         RestController(Server& server,
             const std::string& basePath,
-            std::pmr::memory_resource* mr = std::pmr::get_default_resource(),
+            std::pmr::memory_resource* mr = nullptr,
             std::optional<std::function<void(Datastore<DTO>&)>> seedFunction = std::nullopt)
             : server_(server)
             , basePath_(basePath)
@@ -75,17 +75,19 @@ namespace MuppetExpress {
         Datastore<DTO> dataStore_;
         std::pmr::memory_resource* _mr;
 
+        //ChatCode
         Datastore<DTO> makeDataStore() {
-            if constexpr (std::is_same_v<Datastore<DTO>, std::pmr::vector<DTO>> ||
-                std::is_same_v<Datastore<DTO>, std::pmr::list<DTO>>) {
-                // Uses the container's (allocator) constructor that takes pmr::memory_resource*
+            // If it has a constructor that takes pmr::memory_resource*, call it.
+            // Otherwise, do a normal default constructor.
+            if (_mr) {
                 return Datastore<DTO>(_mr);
             }
             else {
-                // e.g. std::vector<DTO>, std::list<DTO>, or anything else
                 return Datastore<DTO>{};
             }
         }
+
+
 
         void setupHandlers() {
             server_.MapGet(basePath_, [this](Request& req, Response& res) {
@@ -221,8 +223,7 @@ namespace MuppetExpress {
                 auto j = json::parse(req.body());
 
 
-                if constexpr (std::is_same_v<Datastore<DTO>, std::pmr::vector<DTO>> ||
-                    std::is_same_v<Datastore<DTO>, std::pmr::list<DTO>>) {
+                if (_mr) {
                  
                     auto name = j.at("Name").get<std::string>();
                     auto id = IdTraits<typename DTO::IdType>::generateId();
@@ -230,22 +231,26 @@ namespace MuppetExpress {
 
                     DTO newItem{ id, name, _mr };
                     dataStore_.push_back(std::move(newItem));
+
+                    res.result(http::status::created);
+                    res.set(http::field::content_type, "application/json");
+                    res.body() = json(dataStore_.back()).dump();
                 }
                 else {
 
-                    DTO newItem = j.get<DTO>();
+                    /*DTO newItem = j.get<DTO>();
                     newItem.Id = IdTraits<typename DTO::IdType>::generateId();
-                    dataStore_.push_back(newItem);
+                    dataStore_.push_back(newItem);*/
                 }
 
-                res.result(http::status::created);
+               /* res.result(http::status::created);
                 res.set(http::field::content_type, "application/json");
-                res.body() = j.dump();
+                res.body() = json(newItem).dump();*/
             }
             catch (const std::exception& e) {
-                res.result(http::status::bad_request);
-                res.set(http::field::content_type, "application/json");
-                res.body() = json{ {"error", e.what()} }.dump();
+            res.result(http::status::bad_request);
+            res.set(http::field::content_type, "application/json");
+            res.body() = json{ {"error", e.what()} }.dump();
             }
         }
 

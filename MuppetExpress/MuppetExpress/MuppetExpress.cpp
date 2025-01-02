@@ -27,11 +27,11 @@ struct EchoFunctor {
 
 // Main function
 int main(int argc, char** argv) {
-	std::array<std::byte, 4096> buffer;
+	std::array<std::byte, 100> buffer;
 	StatsResource sr;
 	
-	std::pmr::monotonic_buffer_resource mbr(buffer.data(), buffer.size(), &sr);
-	std::pmr::synchronized_pool_resource spr(&mbr);
+	std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), std::pmr::null_memory_resource() };
+	std::pmr::synchronized_pool_resource spr;
 
 	/*StatsResource sr;
 
@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
 		}
 		});*/
 
-	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &spr);
+	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr);
 
 
 	//RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore) {

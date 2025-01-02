@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
 		std::cout << "After 2: " << res.result() << std::endl;
 		});
 
-	server.MapGet("/test", [](Request& req, Response& res) {
+	server.MapGet("/api/test", [](Request& req, Response& res) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
 		res.body() = "Hello Test!";
@@ -90,13 +90,13 @@ int main(int argc, char** argv) {
 		res.body() = str;
 		};
 
-	server.MapGet("/fish/{id}/{stupid}", handler);
-	server.MapGet("/fish/{id}", handler);
-	server.MapGet("/fish/", handler);
+	server.MapGet("/api/fish/{id}/{stupid}", handler);
+	server.MapGet("/api/fish/{id}", handler);
+	server.MapGet("/api/fish/", handler);
 
-	server.MapPost("/echo", EchoFunctor());
+	server.MapPost("/api/echo", EchoFunctor());
 
-	RestController<Pokemon, std::vector> pokemonController(server, "/pokemon", [](std::vector<Pokemon>& datastore, std::size_t& idCounter){
+	RestController<Pokemon, std::vector> pokemonController(server, "/api/pokemon", [](std::vector<Pokemon>& datastore, std::size_t& idCounter){
 			try
 			{
 				datastore.push_back("1,pikachu"_pokemon);

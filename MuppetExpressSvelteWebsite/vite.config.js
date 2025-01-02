@@ -6,20 +6,11 @@ export default defineConfig({
 	plugins: [sveltekit(), purgeCss()],
 	server: {
 		proxy: {
-			// Proxy any requests that are not matched by Svelte
-			'/': {
-				target: 'http://localhost:2000', // Replace with your C++ server's URL
+			// Forward API requests starting with '/api' to your C++ server
+			'/api': {
+				target: 'http://localhost:2000', // Replace with your C++ server's port
 				changeOrigin: true,
-				bypass: (req) => {
-					const knownFrontendRoutes = ['/about', '/contact', '/'];
-
-					// Check if the request URL matches any known frontend routes
-					if (knownFrontendRoutes.some((route) => req.url?.includes(route))) {
-						return null; // Let Svelte handle these routes
-					}
-
-					// Forward any other requests to the backend server
-				}
+				rewrite: (path) => path.replace(/^\/api/, '') // Remove '/api' prefix when forwarding
 			}
 		}
 	}

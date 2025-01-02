@@ -1,6 +1,7 @@
 <script>
 	import "../app.postcss";
 	import { AppShell, AppBar } from "@skeletonlabs/skeleton";
+	import { onMount } from "svelte";
 
 	// Highlight JS
 	import hljs from "highlight.js/lib/core";
@@ -10,34 +11,71 @@
 	import css from "highlight.js/lib/languages/css";
 	import javascript from "highlight.js/lib/languages/javascript";
 	import typescript from "highlight.js/lib/languages/typescript";
+	import json from 'highlight.js/lib/languages/json';
+	import 'svelte-jsoneditor/themes/jse-theme-dark.css';
 
 	hljs.registerLanguage("xml", xml); // for HTML
 	hljs.registerLanguage("css", css);
 	hljs.registerLanguage("javascript", javascript);
 	hljs.registerLanguage("typescript", typescript);
+	hljs.registerLanguage('json', json);
 	storeHighlightJs.set(hljs);
 
 	// Floating UI for Popups
 	import { computePosition, autoUpdate, flip, shift, offset, arrow } from "@floating-ui/dom";
 	import { storePopup } from "@skeletonlabs/skeleton";
+    import LightSwitch from "../components/LightSwitch.svelte";
+	/** @type {{children?: import('svelte').Snippet}} */
+	let { children } = $props();
 	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
+
+	function updateThemeClass() {
+		if (document.documentElement.classList.contains("dark")) {
+			document.body.classList.add("jse-theme-dark");
+		} else {
+			document.body.classList.remove("jse-theme-dark");
+		}
+	}
+
+	onMount(() => {
+		// Initialize the theme class on load
+		updateThemeClass();
+
+		const observer = new MutationObserver(updateThemeClass);
+
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+		return () => {
+			observer.disconnect();
+		};
+	});
 </script>
 
 <!-- App Shell -->
 <AppShell>
-	<svelte:fragment slot="header">
-		<!-- App Bar -->
-		<AppBar>
-			<svelte:fragment slot="lead">
-				<strong class="text-xl uppercase">Skeleton</strong>
-			</svelte:fragment>
-			<svelte:fragment slot="trail">
-				<a class="btn btn-sm variant-ghost-surface" href="https://discord.gg/EXqV7W8MtY" target="_blank" rel="noreferrer"> Discord </a>
-				<a class="btn btn-sm variant-ghost-surface" href="https://twitter.com/SkeletonUI" target="_blank" rel="noreferrer"> Twitter </a>
-				<a class="btn btn-sm variant-ghost-surface" href="https://github.com/skeletonlabs/skeleton" target="_blank" rel="noreferrer"> GitHub </a>
-			</svelte:fragment>
-		</AppBar>
-	</svelte:fragment>
+	{#snippet header()}
+	
+			<!-- App Bar -->
+			<AppBar>
+				{#snippet lead()}
+					
+						<strong class="text-xl">Muppet Express</strong>
+					
+					{/snippet}
+				{#snippet center()}
+					
+						<strong class="text-xl">Test</strong>
+						
+					
+					{/snippet}
+				{#snippet trail()}
+					
+						<LightSwitch/>
+					
+					{/snippet}
+			</AppBar>
+		
+	{/snippet}
 	<!-- Page Route Content -->
-	<slot />
+	{@render children?.()}
 </AppShell>

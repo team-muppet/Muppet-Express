@@ -27,13 +27,19 @@ struct EchoFunctor {
 
 // Main function
 int main(int argc, char** argv) {
-	std::array<std::byte, 206> buffer; // 200 bytes of memory, remember SSO in pmr::string
+	std::array<std::byte, 4096> buffer; // 200 bytes of memory, remember SSO in pmr::string
 	StatsResource sr;
+
+	std::pmr::pool_options opts;
+	opts.max_blocks_per_chunk = 10;
+	opts.largest_required_pool_block = 4096;  // or some smaller/larger value
+
 	
 	std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), std::pmr::null_memory_resource() };
-	std::pmr::synchronized_pool_resource spr;
+	//std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), &sr };
+	std::pmr::synchronized_pool_resource spr(opts, &sr);
 
-	/*StatsResource sr;
+	/*
 
 	std::pmr::vector<Pokemon> PMRtest({ "1,pikachu"_pokemon, "2,bulbasaur"_pokemon, "3,charmander"_pokemon }, &sr);
 
@@ -145,7 +151,7 @@ int main(int argc, char** argv) {
 		}
 		});*/
 
-	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr);
+	//RestController<PmrPokemon, std::pmr::vector> pokemonController(&mbr, server, "/pokemon");
 	//RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon");
 
 
@@ -192,6 +198,7 @@ int main(int argc, char** argv) {
 	});*/
 
 	//RestController<Person, std::list> personController(server, "/person");
+	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr);
 
 	//RestController<Pokemon, std::list> personController(server, "/pokemon");
 

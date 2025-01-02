@@ -39,7 +39,7 @@ protected:
         {
             highWatermarkBytesAlloc_ = bytesAlloc_;
         }
-
+        printStats();
         return parent_->allocate(bytes, alignment);
     }
 
@@ -48,6 +48,7 @@ protected:
     {
         bytesAlloc_ -= static_cast<int32_t>(bytes);
         parent_->deallocate(p, bytes, alignment);
+        printStats();
     }
 
     // Used by polymorphic memory resources to check equality

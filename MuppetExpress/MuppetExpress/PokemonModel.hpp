@@ -23,8 +23,8 @@ struct PmrPokemon {
     std::pmr::string Name;
 
     // Constructor that accepts an ID, a name, and optionally a memory_resource
-    PmrPokemon(IdType id,
-        std::string_view name,
+    PmrPokemon(IdType id = 0,
+        std::string_view name = "",
         std::pmr::memory_resource* mr = std::pmr::get_default_resource())
         : Id(id)
         , Name(name, mr) // Construct pmr::string with the provided resource

@@ -1,11 +1,10 @@
 <script>
+	import '../app.css';
 	import { AppBar } from "@skeletonlabs/skeleton-svelte";
 	import { onMount } from "svelte";
-
-	// Highlight JS
 	import "svelte-jsoneditor/themes/jse-theme-dark.css";
-	import LightSwitch from "$lib/components/LightSwitch.svelte";
-	/** @type {{children?: import('svelte').Snippet}} */
+	import LightSwitch from "../components/LightSwitch.svelte";
+
 	let { children } = $props();
 
 	function updateThemeClass() {
@@ -32,7 +31,7 @@
 
 <div class="grid grid-rows-[auto_1fr_auto]">
 	<!-- Header -->
-	<header class="p-4">
+	<header class="">
 		<AppBar>
 			{#snippet trail()}
 				<LightSwitch />
@@ -42,18 +41,10 @@
 		</AppBar>
 	</header>
 	<!-- Page -->
-	<div class="container mx-auto grid grid-cols-1 xl:grid-cols-[200px_minmax(0px,_1fr)_200px]">
-		<!-- Sidebar (Left) -->
-		<!-- NOTE: hidden in smaller screen sizes -->
-		<aside class="sticky top-0 col-span-1 hidden h-screen p-4 xl:block">(sidebar)</aside>
+	<div class="container mx-auto">
 		<!-- Main -->
-		<main class="col-span-1 space-y-4 p-4">
+		<main class="space-y-4 p-4">
 			{@render children?.()}
 		</main>
-		<!-- Sidebar (Right) -->
-		<!-- NOTE: hidden in smaller screen sizes -->
-		<aside class="sticky top-0 col-span-1 hidden h-screen p-4 xl:block">(sidebar)</aside>
 	</div>
-	<!-- Footer -->
-	<footer class="bg-blue-500 p-4">(footer)</footer>
 </div>

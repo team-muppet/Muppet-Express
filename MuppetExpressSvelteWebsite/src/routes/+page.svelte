@@ -1,5 +1,6 @@
 <script>
 	import ApiCallButton from '../components/ApiCallButton.svelte';
+    import Test from '../components/Test.svelte';
   
 	// Example API call configurations
 	const apiCalls = [
@@ -29,10 +30,14 @@
 	  <h2 class="text-4xl font-bold">Welcome to Muppet Express Showcase</h2>
   
 	  <!-- Loop through apiCalls to render multiple ApiCallButton components -->
-	  <div class="space-y-6">
-		{#each apiCalls as { title, endpoint, headers, body }}
+	  <div class="space-y-6 ">
+		<!-- {#each apiCalls as { title, endpoint, headers, body }}
 		<ApiCallButton {title} {endpoint} {headers} {body} />
-		{/each}
+		<Test/>
+		{/each} -->
+		<Test/>
+		<Test/>
+		<Test/>
 	  </div>
 	</div>
   </div>

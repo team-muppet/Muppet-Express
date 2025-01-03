@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 
 	std::variant<std::string, int> port;
 
-	constexpr int portnr = 2000;
+	constexpr int portnr = 2000; // Assign to 0 to make the argc argv work
 
 	if constexpr (portnr != NULL) {
 		port = portnr;

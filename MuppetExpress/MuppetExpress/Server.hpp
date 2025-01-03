@@ -14,20 +14,6 @@
 
 #include "Definitions.hpp"
 
-/*
-const express = require('express')
-const app = express()
-const port = 3000
-
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
-
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
-*/
-
 struct portnumberVisitor
 {
 	int operator()(int portnumber) {
@@ -41,22 +27,6 @@ struct portnumberVisitor
 		return portnumberFromString;
 	}
 };
-
-//struct constPortnumberVisitor {
-//	constexpr int operator()(int portnumber) const {
-//		return portnumber; // Simply return the integer
-//	}
-//
-//	constexpr int operator()(std::string_view portnumber) const {
-//		// Parse string_view into int at compile time
-//		int result = 0;
-//		for (char c : portnumber) {
-//			if (c < '0' || c > '9') throw "Invalid character"; // Compile-time check
-//			result = result * 10 + (c - '0');
-//		}
-//		return result;
-//	}
-//};
 
 namespace MuppetExpress {
 	class Server
@@ -72,16 +42,7 @@ namespace MuppetExpress {
 			{
 				std::cerr << "Error: " << e.what() << std::endl;
 				exit(1);
-				//or throw; to a catch all in main
 			}
-			//if constexpr (std::is_constant_evaluated()) {
-			//	portnumberVisitor visitor;
-			//	portnumber_ = std::visit(visitor, portnumber);
-			//}
-			//else {
-			//	constPortnumberVisitor visitor;
-			//	portnumber_ = std::visit(visitor, portnumber);
-			//}
 
 			_globalExceptionHandler = exceptionHandler;
 		}
@@ -130,7 +91,7 @@ namespace MuppetExpress {
 				// Create and run threads
 				std::vector<std::thread> threads;
 				for (unsigned int i = 0; i < thread_count; ++i) {
-					threads.emplace_back([&ioc]() {
+					threads.emplace_back([&ioc]() { // A thread is implicitly constructed
 						ioc.run();
 						});
 				}

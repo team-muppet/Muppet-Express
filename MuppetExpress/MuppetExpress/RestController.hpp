@@ -4,15 +4,17 @@
 #include "Server.hpp"
 #include <vector>
 #include <algorithm>
+#include "IdTraits.hpp"
 #include "PokemonModel.hpp"
 
 namespace MuppetExpress {
 	using json = nlohmann::json;
 
-	template <typename DTO>
-	concept HasId = requires(DTO dto) {
-		{ dto.Id } -> std::convertible_to<int>;
-	};
+    template <typename DTO>
+    concept HasId = requires(DTO dto) {
+        typename DTO::IdType;
+        { dto.Id } -> std::same_as<typename DTO::IdType>;
+    };
 
 	template <typename DTO>
 	concept Serializable = requires(DTO obj, json j) {
@@ -34,25 +36,64 @@ namespace MuppetExpress {
 		{ json(store) } -> std::same_as<json>;
 	};
 
-	// template <IsDTO DTO>
-	template <typename DTO, template <typename> typename Datastore>
-		requires IsDatastore<Datastore, DTO>&& IsDTO<DTO>
-	class RestController {
-	public:
-		RestController(Server& server, const std::string& basePath, std::optional<std::function<void(Datastore<DTO>& datastore, std::size_t& idCounter)>> seedFunction = std::nullopt)
-			: server_(server), basePath_(basePath) {
-			setupHandlers();
-			if (seedFunction)
-			{
-				seedFunction.value()(dataStore_, idCounter_);
-			}
-		}
+    template <typename DTO, template <typename> typename Datastore>
+        requires IsDatastore<Datastore, DTO>&& IsDTO<DTO>
+    class RestController 
+    {
+    public:
+        using allocator_type = std::pmr::polymorphic_allocator<std::byte>;
 
-	private:
-		Server& server_;
-		std::string basePath_;
-		Datastore<DTO> dataStore_;
-		std::size_t idCounter_;
+        // The constructor with pmr
+        RestController(
+            Server& server,
+            const std::string& basePath,
+            allocator_type alloc,
+            std::optional<std::function<void(Datastore<DTO>& datastore, IdTraits<typename DTO::IdType>& idGenerator)>> seedFunction = std::nullopt)
+            : server_(server)
+            , basePath_(basePath)
+            , _alloc(alloc) // _mr(mr)
+        {
+            if constexpr (requires { Datastore<DTO>(_alloc); }) {
+                // This means the container (e.g. std::pmr::vector<DTO>)
+                // has a constructor taking a polymorphic_allocator
+				//isPmr_ = true;
+                dataStore_ = Datastore<DTO>(_alloc);
+            }
+            else {
+                // Otherwise, default-construct for containers that
+                // don't accept a pmr allocator in their ctor
+                dataStore_ = Datastore<DTO>{};
+            }
+            setupHandlers();
+            if (seedFunction) {
+                seedFunction.value()(dataStore_, idGenerator_);
+            }
+        }
+
+        RestController(
+            Server& server,
+            const std::string& basePath,
+            std::optional<std::function<void(Datastore<DTO>& datastore, IdTraits<typename DTO::IdType>& idGenerator)>> seedFunction = std::nullopt)
+            : server_(server)
+            , basePath_(basePath)
+        {
+            dataStore_ = Datastore<DTO>{};
+ 
+            setupHandlers();
+            if (seedFunction) {
+                seedFunction.value()(dataStore_, idGenerator_);
+            }
+        }
+
+    private:
+        Server& server_;
+        std::string basePath_;
+        Datastore<DTO> dataStore_;
+        //std::pmr::memory_resource* _mr;
+        allocator_type _alloc;
+        //bool isPmr_ = false;
+        IdTraits<typename DTO::IdType> idGenerator_ = IdTraits<typename DTO::IdType>();
+		std::mutex mtx;
 
 		void setupHandlers() {
 			server_.MapGet(basePath_, [this](Request& req, Response& res) {
@@ -76,22 +117,25 @@ namespace MuppetExpress {
 				});
 		}
 
-		// GET all items
-		void handleGetAll(Request& req, Response& res) {
-			res.result(http::status::ok);
-			res.set(http::field::content_type, "application/json");
+		// GET all items pmr safe
+        void handleGetAll(Request& req, Response& res) {
+            std::scoped_lock lock(mtx);
+            res.result(http::status::ok);
+            res.set(http::field::content_type, "application/json");
 
 			json responseBody = dataStore_;
 			res.body() = responseBody.dump();
 		}
 
-		// GET item by ID
-		void handleGetById(Request& req, Response& res, Parameters& params) {
-			// Keep this so we can trigger global exception handler
-			int id = std::stoi(params["id"]);
-			auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
-				return dto.Id == id;
-				});
+        // GET item by ID
+        void handleGetById(Request& req, Response& res, Parameters& params) {
+			std::scoped_lock lock(mtx);
+            // Keep this so we can trigger global exception handler
+            auto id = idGenerator_.convert(params["id"]);
+
+            auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
+                return dto.Id == id;
+                });
 
 			if (it != dataStore_.end()) {
 				res.result(http::status::ok);
@@ -105,15 +149,24 @@ namespace MuppetExpress {
 			}
 		}
 
-		// POST (Create a new item)
-		void handleCreate(Request& req, Response& res) {
-			try {
-				json jsonBody = json::parse(req.body());
-				DTO newItem = jsonBody.get<DTO>();
+        //// POST (Create a new item)
+      void handleCreate(Request& req, Response& res) {
+            std::scoped_lock lock(mtx);
+            try {
+                json jsonBody = json::parse(req.body());
+                DTO newItem = jsonBody.get<DTO>();
 
-				newItem.Id = ++idCounter_;
+                newItem.Id = idGenerator_.generateId();
 
-				dataStore_.push_back(newItem);
+                if constexpr (requires { Datastore<DTO>(_alloc); })
+				{
+                    //dataStore_.emplace_back(newItem.Id, newItem.Name, _alloc.resource());
+                    dataStore_.emplace_back(newItem, _alloc.resource());
+				}
+				else
+				{
+                    dataStore_.push_back(newItem);
+				}
 
 				res.result(http::status::created);
 				res.set(http::field::content_type, "application/json");
@@ -126,13 +179,15 @@ namespace MuppetExpress {
 			}
 		}
 
-		// PUT (Update an item by ID)
-		void handleUpdate(Request& req, Response& res, Parameters& params) {
-			try {
-				int id = std::stoi(params["id"]);
-				auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
-					return dto.Id == id;
-					});
+        // PUT (Update an item by ID) not pmr safe
+        void handleUpdate(Request& req, Response& res, Parameters& params) {
+            std::scoped_lock lock(mtx);
+            try {
+                auto id = idGenerator_.convert(params["id"]);
+
+                auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
+                    return dto.Id == id;
+                    });
 
 				if (it != dataStore_.end()) {
 					json jsonBody = json::parse(req.body());
@@ -158,25 +213,97 @@ namespace MuppetExpress {
 			}
 		}
 
-		// DELETE an item by ID
-		void handleDelete(Request& req, Response& res, Parameters& params) {
-			int id = std::stoi(params["id"]);
-			auto it = std::remove_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
-				return dto.Id == id;
-				});
+        // DELETE an item by I, pmr safe
+        void handleDelete(Request& req, Response& res, Parameters& params) {
+            std::scoped_lock lock(mtx);
+            auto id = idGenerator_.convert(params["id"]);
 
-			if (it != dataStore_.end()) {
-				dataStore_.erase(it, dataStore_.end());
-				res.result(http::status::ok);
-				res.set(http::field::content_type, "application/json");
-				res.body() = R"({ "message": "Item deleted" })";
-			}
-			else {
-				res.result(http::status::not_found);
-				res.set(http::field::content_type, "application/json");
-				res.body() = R"({ "error": "Item not found" })";
-			}
-		}
-	};
+            auto it = std::remove_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
+                return dto.Id == id;
+                });
+
+            if (it != dataStore_.end()) {
+                dataStore_.erase(it, dataStore_.end());
+                res.result(http::status::ok);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({ "message": "Item deleted" })";
+            }
+            else {
+                res.result(http::status::not_found);
+                res.set(http::field::content_type, "application/json");
+                res.body() = R"({ "error": "Item not found" })";
+            }
+        }
+
+     //   //pmr specifik stuff
+     //   // Example of manually parsing JSON into a pmr-aware DTO
+     //   void handleCreate(Request& req, Response& res) {
+     //       try {
+     //           auto j = json::parse(req.body());
+
+
+     //           if constexpr (std::is_same_v<DTO, PmrPokemon>) {
+     //            
+     //               auto name = j.at("Name").get<std::string>();
+					//auto id = IdTraits<typename DTO::IdType>::generateId(); // remember to count this down if it does not work
+
+
+     //               //DTO newItem{ id, name, _mr };                
+
+     //               //dataStore_.push_back(newItem);
+     //               dataStore_.emplace_back(id, name, _alloc.resource());
+     //           }
+     //           else {
+
+     //               DTO newItem = j.get<DTO>();
+     //               newItem.Id = IdTraits<typename DTO::IdType>::generateId();
+     //               dataStore_.push_back(newItem);
+     //           }
+
+     //          res.result(http::status::created);
+     //           res.set(http::field::content_type, "application/json");
+     //           res.body() = json(dataStore_.back()).dump();
+     //       }
+     //       catch (const std::exception& e) {
+     //       res.result(http::status::bad_request);
+     //       res.set(http::field::content_type, "application/json");
+     //       res.body() = json{ {"error", e.what()} }.dump();
+     //       }
+     //   }
+
+     //   // PUT (Update an item by ID) trying pmr safe
+     //   void handleUpdate(Request& req, Response& res, Parameters& params) {
+     //       try {
+     //           auto id = IdTraits<typename DTO::IdType>::convert(params["id"]);
+     //           auto j = json::parse(req.body());
+
+     //           auto it = std::find_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {
+     //               return dto.Id == id;
+     //               });
+
+     //           auto name = j.at("Name").get<std::string>();
+
+     //           //DTO newItem{ id, name, alloc.resource };
+
+     //           if ( it != dataStore_.end())
+     //           {
+				 //   dataStore_.erase(it);
+     //               //dataStore_.push_back(newItem);
+     //               dataStore_.emplace_back(id, name, _alloc.resource());
+     //           }
+     //           else {
+     //               res.result(http::status::not_found);
+     //               res.set(http::field::content_type, "application/json");
+     //               res.body() = R"({ "error": "Item not found" })";
+     //           }
+     //       }
+     //       catch (const std::exception& e) {
+     //           res.result(http::status::bad_request);
+     //           res.set(http::field::content_type, "application/json");
+     //           res.body() = json{ {"error", e.what()} }.dump();
+     //       }
+     //   }
+
+    };
 
 }  // namespace MuppetExpress

@@ -9,7 +9,6 @@ namespace MuppetExpress {
 	using Parameters = std::unordered_map<std::string, std::string>;
 
 	class Request : public boost::beast::http::request<boost::beast::http::string_body> {
-	
 	public:
 		const Parameters& params() const
 		{

@@ -1,7 +1,13 @@
 #include "Server.hpp"
 #include "StaticFileMiddleware.hpp"
 #include "RestController.hpp"
+//#include "PmrDatastore.hpp"
+#include <memory_resource>
+#include "StatsResourse.hpp"
 
+#include "IdTraits.hpp"
+#include "PokemonModel.hpp"
+#include "PersonModel.hpp"
 
 using namespace MuppetExpress;
 
@@ -21,6 +27,27 @@ struct EchoFunctor {
 
 // Main function
 int main(int argc, char** argv) {
+	std::array<std::byte, 1096> buffer; // 200 bytes of memory, remember SSO in pmr::string
+	StatsResource sr;
+
+	std::pmr::pool_options opts;
+	opts.max_blocks_per_chunk = 10;
+	opts.largest_required_pool_block = 4096;  // or some smaller/larger value
+
+	
+	std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), std::pmr::null_memory_resource() };
+	//std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), &sr };
+	std::pmr::unsynchronized_pool_resource spr(opts, &sr);
+
+	/*
+
+	std::pmr::vector<Pokemon> PMRtest({ "1,pikachu"_pokemon, "2,bulbasaur"_pokemon, "3,charmander"_pokemon }, &sr);
+
+	sr.printStats();
+
+	PMRtest.push_back("4,squirtle"_pokemon);
+
+	sr.printStats();*/
 
 	auto exceptionHandler = [](Request& req, Response& res, std::function<void()> routehandler) {
 		try {
@@ -37,13 +64,24 @@ int main(int argc, char** argv) {
 		}
 		};
 
-	std::variant<std::string, int> port = 2000;
+	std::variant<std::string, int> port;
 
-	for (int i = 1; i < argc; ++i) {
-		std::string arg = argv[i];
+	constexpr int portnr = 2000; // Assign to 0 to make the argc argv work
 
-		if (arg == "-port" && (i + 1 < argc)) {
-			port = argv[++i];
+	if constexpr (portnr != NULL) {
+		port = portnr;
+	}
+	else {
+		if (argc == 0) {
+			port = "2001";
+		}
+		else {
+			for (int i = 1; i < argc; ++i) {
+				std::string arg = argv[i];
+				if (arg == "-port") {
+					port = argv[++i];
+				}
+			}
 		}
 	}
 
@@ -62,19 +100,19 @@ int main(int argc, char** argv) {
 		res.result(http::status::unauthorized);
 		next();
 		std::cout << "After 1: " << res.result() << std::endl;
-		});
+	});
 
 	server.Use([](Request& req, Response& res, std::function<void()> next) {
 		std::cout << "Before 2: " << res.result() << std::endl;
 		next();
 		std::cout << "After 2: " << res.result() << std::endl;
-		});
+	});
 
 	server.MapGet("/api/test", [](Request& req, Response& res) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
 		res.body() = "Hello Test!";
-		});
+	});
 
 	auto handler = [](Request& req, Response& res, Parameters& params) {
 		res.result(http::status::ok);
@@ -88,7 +126,7 @@ int main(int argc, char** argv) {
 		}
 
 		res.body() = str;
-		};
+	};
 
 	server.MapGet("/api/fish/{id}/{stupid}", handler);
 	server.MapGet("/api/fish/{id}", handler);
@@ -96,21 +134,26 @@ int main(int argc, char** argv) {
 
 	server.MapPost("/api/echo", EchoFunctor());
 
-	RestController<Pokemon, std::vector> pokemonController(server, "/api/pokemon", [](std::vector<Pokemon>& datastore, std::size_t& idCounter){
-			try
-			{
-				datastore.push_back("1,pikachu"_pokemon);
-				++idCounter;
-				datastore.push_back("2,bulbasaur"_pokemon);
-				++idCounter;
-				datastore.push_back("a,charmander"_pokemon);
-				++idCounter;
-			}
-			catch (const std::exception& e)
-			{
-				std::cerr << "Error: " << e.what() << std::endl;
-			}
-	});
+	/*RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr, [&mbr](std::pmr::vector<PmrPokemon>& datastore, IdTraits<typename PmrPokemon::IdType>& idGenerator) {
+		try
+		{
+			datastore.emplace_back("1,pikachu"_pmrPokemon, &mbr);
+			idGenerator.generateId();
+			datastore.emplace_back("2,bulbasaur"_pmrPokemon, &mbr);
+			idGenerator.generateId();
+			datastore.emplace_back("a,charmander"_pmrPokemon, &mbr);
+			idGenerator.generateId();
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Error: " << e.what() << std::endl;
+		}
+	});*/
+
+	//RestController<Person, std::list> personController(server, "/person");
+	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &spr);
+
+	//RestController<Pokemon, std::list> personController(server, "/pokemon");
 
 	server.RunServer();
 

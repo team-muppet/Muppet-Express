@@ -18,7 +18,6 @@ namespace MuppetExpress {
 	namespace net = boost::asio;
 	using tcp = net::ip::tcp;
 	using Response = http::response<http::string_body>;
-	using Parameters = std::unordered_map<std::string, std::string>;
 
 	using HandlerWithoutParameters = std::function<void(Request& request, Response& response)>;
 	using HandlerWithParameters = std::function<void(Request& request, Response& response, Parameters& parameters)>;

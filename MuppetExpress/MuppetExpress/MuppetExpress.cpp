@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
 	
 	std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), std::pmr::null_memory_resource() };
 	//std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), &sr };
-	std::pmr::synchronized_pool_resource spr(opts, &sr);
+	std::pmr::unsynchronized_pool_resource spr(opts, &sr);
 
 	/*
 
@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
 
 	server.MapPost("/echo", EchoFunctor());
 
-	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr, [&mbr](std::pmr::vector<PmrPokemon>& datastore, IdTraits<typename PmrPokemon::IdType>& idGenerator) {
+	/*RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr, [&mbr](std::pmr::vector<PmrPokemon>& datastore, IdTraits<typename PmrPokemon::IdType>& idGenerator) {
 		try
 		{
 			datastore.emplace_back("1,pikachu"_pmrPokemon, &mbr);
@@ -148,10 +148,10 @@ int main(int argc, char** argv) {
 		{
 			std::cerr << "Error: " << e.what() << std::endl;
 		}
-	});
+	});*/
 
 	//RestController<Person, std::list> personController(server, "/person");
-	//RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr);
+	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &spr);
 
 	//RestController<Pokemon, std::list> personController(server, "/pokemon");
 

@@ -93,6 +93,7 @@ namespace MuppetExpress {
         allocator_type _alloc;
         //bool isPmr_ = false;
         IdTraits<typename DTO::IdType> idGenerator_ = IdTraits<typename DTO::IdType>();
+		std::mutex mtx;
 
         void setupHandlers() {
             server_.MapGet(basePath_, [this](Request& req, Response& res) {
@@ -118,6 +119,7 @@ namespace MuppetExpress {
 
 		// GET all items pmr safe
         void handleGetAll(Request& req, Response& res) {
+            std::scoped_lock lock(mtx);
             res.result(http::status::ok);
             res.set(http::field::content_type, "application/json");
 
@@ -127,6 +129,7 @@ namespace MuppetExpress {
 
         // GET item by ID
         void handleGetById(Request& req, Response& res, Parameters& params) {
+			std::scoped_lock lock(mtx);
             // Keep this so we can trigger global exception handler
             auto id = idGenerator_.convert(params["id"]);
 
@@ -148,6 +151,7 @@ namespace MuppetExpress {
 
         //// POST (Create a new item)
       void handleCreate(Request& req, Response& res) {
+            std::scoped_lock lock(mtx);
             try {
                 json jsonBody = json::parse(req.body());
                 DTO newItem = jsonBody.get<DTO>();
@@ -177,6 +181,7 @@ namespace MuppetExpress {
 
         // PUT (Update an item by ID) not pmr safe
         void handleUpdate(Request& req, Response& res, Parameters& params) {
+            std::scoped_lock lock(mtx);
             try {
                 auto id = idGenerator_.convert(params["id"]);
 
@@ -210,6 +215,7 @@ namespace MuppetExpress {
 
         // DELETE an item by I, pmr safe
         void handleDelete(Request& req, Response& res, Parameters& params) {
+            std::scoped_lock lock(mtx);
             auto id = idGenerator_.convert(params["id"]);
 
             auto it = std::remove_if(dataStore_.begin(), dataStore_.end(), [&](const DTO& dto) {

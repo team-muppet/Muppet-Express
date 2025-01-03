@@ -2,32 +2,29 @@
   import { JSONEditor, Mode } from "svelte-jsoneditor";
   import { Tabs } from "@skeletonlabs/skeleton-svelte";
   import Icon from "@iconify/svelte";
-  import { fade } from "svelte/transition";
 
-  let { title = "Make API Call", method = "GET", endpoint = "/api/example", headers = { "Content-Type": "application/json" }, body = null } = $props();
+  let { title = "Make API Call", method = "GET", endpoint = "/api/example", headers = null, body = null } = $props();
 
   let methodInternal = $state(method);
   let endpointInternal = $state(endpoint);
 
   let headersJson = $state({
-    text: JSON.stringify(headers),
+    text: headers ? JSON.stringify(headers) : "",
   });
 
   let bodyJson = $state({
-    text: body !== null ? JSON.stringify(body) : "",
+    text: body ? JSON.stringify(body) : "",
   });
 
   // Tab state
   let group = $state("request");
-  let tabs;
 
   // State variables for response
   let response: Response = $state(null);
   let responseBody = $state(null);
-  let responseHeaders = $state(null);
   let errorMessage = $state(null);
 
-  let responseHeadersJson = $derived({ json: !response ? null : Object.fromEntries(response.headers) });
+  let responseHeadersJson = $derived(!response ? { text: "" } : { json: Object.fromEntries(response.headers) });
   let responseBodyJson = $derived({ text: !responseBody ? "" : responseBody });
 
   let isLoading = $state(false);
@@ -36,7 +33,6 @@
   async function makeApiCall() {
     response = null;
     responseBody = null;
-    responseHeaders = null;
     errorMessage = null;
 
     isLoading = true;
@@ -46,12 +42,12 @@
       if (methodInternal === "GET") {
         resp = await fetch(endpointInternal, {
           method: methodInternal,
-          headers: JSON.parse(headersJson.text),
+          headers: headersJson.text ? JSON.parse(headersJson.text) : {},
         });
       } else {
         resp = await fetch(endpointInternal, {
           method: methodInternal,
-          headers: JSON.parse(headersJson.text),
+          headers: headersJson.text ? JSON.parse(headersJson.text) : {},
           body: bodyJson.text,
         });
       }
@@ -99,7 +95,7 @@
   </div>
 
   <div class="relative">
-    <Tabs bind:this={tabs} bind:value={group} composite>
+    <Tabs bind:value={group} composite>
       {#snippet list()}
         <Tabs.Control value="request">
           {#snippet lead()}

@@ -1,7 +1,6 @@
 #include "Server.hpp"
 #include "StaticFileMiddleware.hpp"
 #include "RestController.hpp"
-//#include "PmrDatastore.hpp"
 #include <memory_resource>
 #include "StatsResourse.hpp"
 
@@ -34,20 +33,9 @@ int main(int argc, char** argv) {
 	opts.max_blocks_per_chunk = 10;
 	opts.largest_required_pool_block = 4096;  // or some smaller/larger value
 
-	
 	std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), std::pmr::null_memory_resource() };
 	//std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), &sr };
-	std::pmr::unsynchronized_pool_resource spr(opts, &sr);
-
-	/*
-
-	std::pmr::vector<Pokemon> PMRtest({ "1,pikachu"_pokemon, "2,bulbasaur"_pokemon, "3,charmander"_pokemon }, &sr);
-
-	sr.printStats();
-
-	PMRtest.push_back("4,squirtle"_pokemon);
-
-	sr.printStats();*/
+	std::pmr::synchronized_pool_resource spr(opts, &sr);
 
 	auto exceptionHandler = [](Request& req, Response& res, std::function<void()> routehandler) {
 		try {
@@ -71,11 +59,10 @@ int main(int argc, char** argv) {
 	if constexpr (portnr != 0) {
 		port = portnr;
 	}
-	else {
-		if (argc == 0) {
-			port = "2001";
-		}
-		else {
+	else
+	{
+		port = "2000";
+		if (argc != 0) {
 			for (int i = 1; i < argc; ++i) {
 				std::string arg = argv[i];
 				if (arg == "-port") {
@@ -90,22 +77,9 @@ int main(int argc, char** argv) {
 	server.Use(MuppetExpress::StaticFileMiddleware("wwwroot"));
 
 	server.Use([](Request& req, Response& res, std::function<void()> next) {
-		std::string str;
-		for (auto& param : req.params())
-		{
-			std::cout << param.first + " = " + param.second << std::endl;
-		}
-
-		std::cout << "Before 1: " << res.result() << std::endl;
-		res.result(http::status::unauthorized);
+		std::cout << "Before endpoint: " << res.result() << std::endl;
 		next();
-		std::cout << "After 1: " << res.result() << std::endl;
-	});
-
-	server.Use([](Request& req, Response& res, std::function<void()> next) {
-		std::cout << "Before 2: " << res.result() << std::endl;
-		next();
-		std::cout << "After 2: " << res.result() << std::endl;
+		std::cout << "After endpoint: " << res.result() << std::endl;
 	});
 
 	server.MapGet("/api/test", [](Request& req, Response& res) {
@@ -114,7 +88,7 @@ int main(int argc, char** argv) {
 		res.body() = "Hello Test!";
 	});
 
-	auto handler = [](Request& req, Response& res, Parameters& params) {
+	auto printParamHandler = [](Request& req, Response& res, Parameters& params) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
 
@@ -128,13 +102,16 @@ int main(int argc, char** argv) {
 		res.body() = str;
 	};
 
-	server.MapGet("/api/fish/{id}/{stupid}", handler);
-	server.MapGet("/api/fish/{id}", handler);
-	server.MapGet("/api/fish/", handler);
-
+	server.MapGet("/api/echo", EchoFunctor());
 	server.MapPost("/api/echo", EchoFunctor());
+	server.MapPut("/api/echo", EchoFunctor());
+	server.MapDelete("/api/echo", EchoFunctor());
 
-	/*RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr, [&mbr](std::pmr::vector<PmrPokemon>& datastore, IdTraits<typename PmrPokemon::IdType>& idGenerator) {
+	server.MapGet("/api/params/{id}/{name}", printParamHandler);
+	server.MapGet("/api/params/{id}", printParamHandler);
+	server.MapGet("/api/params/", printParamHandler);
+
+	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/api/pokemon", &mbr, [&mbr](std::pmr::vector<PmrPokemon>& datastore, IdTraits<typename PmrPokemon::IdType>& idGenerator) {
 		try
 		{
 			datastore.emplace_back("1,pikachu"_pmrPokemon, &mbr);
@@ -148,14 +125,24 @@ int main(int argc, char** argv) {
 		{
 			std::cerr << "Error: " << e.what() << std::endl;
 		}
-	});*/
+	});
 
-	//RestController<Person, std::list> personController(server, "/person");
-	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &spr);
-
-	//RestController<Pokemon, std::list> personController(server, "/pokemon");
+	RestController<Person, std::list> personController(server, "/api/person");
 
 	server.RunServer();
 
 	return 0;
+}
+
+void helloWorldExample()
+{
+	const int port = 3001;
+
+	auto server = MuppetExpress::Server(port);
+
+	server.MapGet("/", [](Request& req, Response& res) {
+		res.body() = "Hello World!";
+		});
+
+	server.RunServer();
 }

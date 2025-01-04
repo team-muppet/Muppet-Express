@@ -88,7 +88,7 @@ namespace MuppetExpress {
 				unsigned int thread_count = std::thread::hardware_concurrency();
 				if (thread_count == 0) thread_count = 4; // Default to 4 threads if hardware_concurrency is unavailable
 
-				// Create and run threads
+				// Create and run threads on the io context
 				std::vector<std::thread> threads;
 				for (unsigned int i = 0; i < thread_count; ++i) {
 					threads.emplace_back([&ioc]() { // A thread is implicitly constructed

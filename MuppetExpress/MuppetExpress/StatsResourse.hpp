@@ -58,22 +58,3 @@ protected:
         return parent_->is_equal(other);
     }
 };
-
-//// Example usage
-//int main()
-//{
-//    StatsResource stats; // Uses default_resource() internally
-//
-//    // Create a pmr::vector that uses our stats resource
-//    std::pmr::vector<int> vec(&stats);
-//
-//    // Perform some allocations
-//    for (int i = 0; i < 100; ++i) {
-//        vec.push_back(i);
-//    }
-//
-//    // Print stats
-//    stats.printStats();
-//
-//    return 0;
-//}

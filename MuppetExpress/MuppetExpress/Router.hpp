@@ -144,8 +144,7 @@ namespace MuppetExpress {
 		// Modified traverse for lookup.
 		// This time we attempt to match either a literal child or the paramChild.
 		// If paramChild matches, we record the segment in params.
-		std::shared_ptr<TrieNode> traversePathForLookup(const std::string_view& path,
-			std::unordered_map<std::string, std::string>& params) const {
+		std::shared_ptr<TrieNode> traversePathForLookup(const std::string_view& path, Parameters& params) const {
 			auto node = root;
 			size_t start = 0;
 

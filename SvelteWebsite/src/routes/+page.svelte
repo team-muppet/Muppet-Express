@@ -35,6 +35,10 @@
 	];
 </script>
 
+<svelte:head>
+	<title>Muppet Express</title>
+</svelte:head>
+
 <div class="container mx-auto h-screen flex justify-center p-4">
 	<div class="w-full space-y-8 text-center">
 		<h2 class="text-4xl font-bold">Welcome to Muppet Express Showcase</h2>

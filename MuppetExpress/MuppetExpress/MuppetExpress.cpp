@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
 	server.MapGet("/api/params/{id}", printParamHandler);
 	server.MapGet("/api/params/", printParamHandler);
 
-	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/api/pokemon", &mbr, [&mbr](std::pmr::vector<PmrPokemon>& datastore, IdTraits<typename PmrPokemon::IdType>& idGenerator) {
+	/*RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/api/pokemon", &mbr, [&mbr](std::pmr::vector<PmrPokemon>& datastore, IdTraits<typename PmrPokemon::IdType>& idGenerator) {
 		try
 		{
 			datastore.emplace_back("1,pikachu"_pmrPokemon, &mbr);
@@ -125,7 +125,9 @@ int main(int argc, char** argv) {
 		{
 			std::cerr << "Error: " << e.what() << std::endl;
 		}
-	});
+	});*/
+
+	RestController<Pokemon, std::vector> pokemonController(server, "/api/pokemon");
 
 	RestController<Person, std::list> personController(server, "/api/person");
 

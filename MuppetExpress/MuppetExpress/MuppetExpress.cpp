@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
 
 	constexpr int portnr = 2000; // Assign to 0 to make the argc argv work
 
-	if constexpr (portnr != NULL) {
+	if constexpr (portnr != 0) {
 		port = portnr;
 	}
 	else {
@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
 		std::cout << "After 2: " << res.result() << std::endl;
 	});
 
-	server.MapGet("/test", [](Request& req, Response& res) {
+	server.MapGet("/api/test", [](Request& req, Response& res) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
 		res.body() = "Hello Test!";
@@ -128,11 +128,11 @@ int main(int argc, char** argv) {
 		res.body() = str;
 	};
 
-	server.MapGet("/fish/{id}/{stupid}", handler);
-	server.MapGet("/fish/{id}", handler);
-	server.MapGet("/fish/", handler);
+	server.MapGet("/api/fish/{id}/{stupid}", handler);
+	server.MapGet("/api/fish/{id}", handler);
+	server.MapGet("/api/fish/", handler);
 
-	server.MapPost("/echo", EchoFunctor());
+	server.MapPost("/api/echo", EchoFunctor());
 
 	/*RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/pokemon", &mbr, [&mbr](std::pmr::vector<PmrPokemon>& datastore, IdTraits<typename PmrPokemon::IdType>& idGenerator) {
 		try

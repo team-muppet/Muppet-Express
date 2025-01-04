@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
 
 	constexpr int portnr = 2000; // Assign to 0 to make the argc argv work
 
-	if constexpr (portnr != NULL) {
+	if constexpr (portnr != 0) {
 		port = portnr;
 	}
 	else {

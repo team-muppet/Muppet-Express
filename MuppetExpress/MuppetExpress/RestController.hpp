@@ -22,10 +22,10 @@ namespace MuppetExpress {
 		{ from_json(j, obj) } -> std::same_as<void>;
 	};
 
-	template <typename DTO>
-	concept IsDTO = requires {
-		HasId<DTO>&& Serializable<DTO>;
-	};
+    template <typename DTO>
+    concept IsDTO = requires {
+        HasId<DTO> && Serializable<DTO>;
+    };
 
 	template <template<typename> typename DataStore, typename DTO>
 	concept IsDatastore = requires(DataStore<DTO> store, DTO dto) {

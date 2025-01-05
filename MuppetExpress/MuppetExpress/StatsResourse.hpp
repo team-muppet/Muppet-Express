@@ -3,7 +3,7 @@
 #include <memory_resource>
 #include <cstdint>
 #include <iostream>
-
+//StatsResource is taken from the slides for PMR.
 class StatsResource : public std::pmr::memory_resource
 {
 public:

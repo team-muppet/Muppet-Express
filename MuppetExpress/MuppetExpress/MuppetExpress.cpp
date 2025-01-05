@@ -26,7 +26,7 @@ struct EchoFunctor {
 
 // Main function
 int main(int argc, char** argv) {
-	std::array<std::byte, 4096*100> buffer; // 200 bytes of memory, remember SSO in pmr::string
+	std::array<std::byte, 4096*100> buffer;
 	StatsResource sr;
 
 	//std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), std::pmr::null_memory_resource() };

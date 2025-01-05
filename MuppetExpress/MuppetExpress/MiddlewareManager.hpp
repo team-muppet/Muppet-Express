@@ -24,7 +24,6 @@ namespace MuppetExpress {
 		void runChain(Request& req, Response& res, std::function<void()> endpointHandler) {
 			std::size_t current = 0;
 
-			// [&] Captures the variables in the scope by reference so they can be used in the lambda
 			std::function<void()> next = [&]() {
 				if (current < _middlewareChain.size()) {
 					Middleware& mw = _middlewareChain[current++];

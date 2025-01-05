@@ -30,17 +30,6 @@ namespace MuppetExpress {
 			request.params(params);
 
 			if (auto it = node->handlers.find(request.method()); it != node->handlers.end()) {
-				/*return std::visit([&](auto&& handlerVariant) -> std::optional<HandlerWithoutParameters> {
-					if constexpr (std::is_same_v<std::decay_t<decltype(handlerVariant)>, HandlerWithoutParameters>) {
-						return handlerVariant;
-					}
-					else {
-						return std::bind(handlerVariant, std::placeholders::_1, std::placeholders::_2, params);
-					}
-					},
-					it->second
-				);*/
-
 				auto& handlerVariant = it->second;
 
 				if (std::holds_alternative<HandlerWithoutParameters>(handlerVariant))
@@ -97,7 +86,6 @@ namespace MuppetExpress {
 
 		std::shared_ptr<TrieNode> root = std::make_shared<TrieNode>();
 
-		// Modified traversePath for registration
 		// If a segment starts with "{" and ends with "}", it's a parameter segment.
 		std::shared_ptr<TrieNode> traversePathToAddNodes(const std::string_view& path) {
 			auto node = root;
@@ -141,8 +129,6 @@ namespace MuppetExpress {
 			return node;
 		}
 
-		// Modified traverse for lookup.
-		// This time we attempt to match either a literal child or the paramChild.
 		// If paramChild matches, we record the segment in params.
 		std::shared_ptr<TrieNode> traversePathForLookup(const std::string_view& path, Parameters& params) const {
 			auto node = root;

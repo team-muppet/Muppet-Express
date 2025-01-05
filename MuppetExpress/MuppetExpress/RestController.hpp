@@ -52,13 +52,9 @@ namespace MuppetExpress {
             : _alloc(alloc)
         {
             if constexpr (requires { Datastore<DTO>(_alloc); }) {
-                // This means the container (e.g. std::pmr::vector<DTO>)
-                // has a constructor taking a polymorphic_allocator
                 dataStore_ = Datastore<DTO>(_alloc);
             }
             else {
-                // Otherwise, default-construct for containers that
-                // Don't accept a pmr allocator in their constructor
                 dataStore_ = Datastore<DTO>{};
             }
 
@@ -111,7 +107,7 @@ namespace MuppetExpress {
                 });
         }
 
-		// GET all items pmr safe
+		// GET all items
         void handleGetAll(Request& req, Response& res) {
             std::scoped_lock lock(mtx);
             res.result(http::status::ok);
@@ -173,7 +169,7 @@ namespace MuppetExpress {
 			}
 		}
 
-        // PUT (Update an item by ID) not pmr safe
+        // PUT (Update an item by ID)
         void handleUpdate(Request& req, Response& res, Parameters& params) {
             std::scoped_lock lock(mtx);
             try {
@@ -186,7 +182,7 @@ namespace MuppetExpress {
 				if (it != dataStore_.end()) {
 					json jsonBody = json::parse(req.body());
 					DTO updatedItem = jsonBody.get<DTO>();
-					updatedItem.Id = id;  // Keep the ID the same
+					updatedItem.Id = id;
 
 					*it = updatedItem;
 
@@ -207,7 +203,7 @@ namespace MuppetExpress {
 			}
 		}
 
-        // DELETE an item by Id, pmr safe
+        // DELETE an item by Id
         void handleDelete(Request& req, Response& res, Parameters& params) {
             std::scoped_lock lock(mtx);
             auto id = idGenerator_.convert(params["id"]);

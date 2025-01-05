@@ -12,9 +12,10 @@ struct Pokemon {
 
     IdType Id;
     std::string Name;
+    std::string Image;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Pokemon, Id, Name)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Pokemon, Id, Name, Image)
 
 struct PmrPokemon {
     using IdType = int;

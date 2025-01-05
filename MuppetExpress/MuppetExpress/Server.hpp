@@ -120,12 +120,16 @@ namespace MuppetExpress {
 		// Handle an HTTP request
 		net::awaitable<void> handle_request(tcp::socket socket) {
 			try {
-				beast::flat_buffer buffer;
-				Request req;
-				Response res;
+				beast::flat_buffer buffer(20 * 1024 * 1024); // 20 MB
+				http::request_parser<http::string_body> parser;
+
+				parser.body_limit(20 * 1024 * 1024);
 
 				// Read the HTTP request
-				co_await http::async_read(socket, buffer, req, net::use_awaitable);
+				co_await http::async_read(socket, buffer, parser, net::use_awaitable);
+
+				Request req = Request(parser.release());
+				Response res;
 
 				auto optionalHandler = router.resolve(req);
 

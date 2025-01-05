@@ -14,7 +14,7 @@
 
 #include "Definitions.hpp"
 
-struct portnumberVisitor
+struct PortnumberVisitor
 {
 	int operator()(int portnumber) {
 		std::cout << "Portnumber from int: " << portnumber << std::endl;
@@ -35,7 +35,7 @@ namespace MuppetExpress {
 		Server(std::variant<std::string, int> portnumber, std::optional<GlobalExceptionHandler> exceptionHandler = std::nullopt) {
 			try
 			{
-				portnumberVisitor visitor;
+				PortnumberVisitor visitor;
 				portnumber_ = std::visit(visitor, portnumber);
 			}
 			catch (const std::exception& e)
@@ -110,7 +110,6 @@ namespace MuppetExpress {
 		}
 
 	private:
-
 		int portnumber_;
 
 		Router router;

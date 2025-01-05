@@ -84,6 +84,11 @@ int main(int argc, char** argv) {
 		res.body() = "Hello Test!";
 	});
 
+	server.MapGet("/api/echo", EchoFunctor());
+	server.MapPost("/api/echo", EchoFunctor());
+	server.MapPut("/api/echo", EchoFunctor());
+	server.MapDelete("/api/echo", EchoFunctor());
+
 	auto printParamHandler = [](Request& req, Response& res, Parameters& params) {
 		res.result(http::status::ok);
 		res.set(http::field::content_type, "text/plain");
@@ -97,11 +102,6 @@ int main(int argc, char** argv) {
 
 		res.body() = str;
 	};
-
-	server.MapGet("/api/echo", EchoFunctor());
-	server.MapPost("/api/echo", EchoFunctor());
-	server.MapPut("/api/echo", EchoFunctor());
-	server.MapDelete("/api/echo", EchoFunctor());
 
 	server.MapGet("/api/params/{id}/{name}", printParamHandler);
 	server.MapGet("/api/params/{id}", printParamHandler);

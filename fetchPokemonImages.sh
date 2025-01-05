@@ -5,7 +5,7 @@ DOWNLOADS_DIR=~/Downloads/pokemon_images
 
 # Range of Pokémon IDs to fetch
 START_ID=1
-END_ID=151
+END_ID=20
 
 # Base URL for Pokémon images
 BASE_URL="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork"

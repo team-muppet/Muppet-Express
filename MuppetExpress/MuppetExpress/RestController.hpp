@@ -49,20 +49,21 @@ namespace MuppetExpress {
             const std::string& basePath,
             allocator_type alloc,
             std::optional<std::function<void(Datastore<DTO>& datastore, IdTraits<typename DTO::IdType>& idGenerator)>> seedFunction = std::nullopt)
-            : _alloc(alloc) // _mr(mr)
+            : _alloc(alloc)
         {
             if constexpr (requires { Datastore<DTO>(_alloc); }) {
                 // This means the container (e.g. std::pmr::vector<DTO>)
                 // has a constructor taking a polymorphic_allocator
-				//isPmr_ = true;
                 dataStore_ = Datastore<DTO>(_alloc);
             }
             else {
                 // Otherwise, default-construct for containers that
-                // don't accept a pmr allocator in their ctor
+                // Don't accept a pmr allocator in their constructor
                 dataStore_ = Datastore<DTO>{};
             }
+
             setupHandlers(server, basePath);
+
             if (seedFunction) {
                 seedFunction.value()(dataStore_, idGenerator_);
             }
@@ -76,6 +77,7 @@ namespace MuppetExpress {
             dataStore_ = Datastore<DTO>{};
  
             setupHandlers(server, basePath);
+
             if (seedFunction) {
                 seedFunction.value()(dataStore_, idGenerator_);
             }

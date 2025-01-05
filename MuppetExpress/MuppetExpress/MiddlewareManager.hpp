@@ -8,8 +8,7 @@ namespace MuppetExpress {
 	class MiddlewareManager {
 	public:
 		void addMiddleware(Middleware middleware) {
-			// Strong guarantee, has to create a copy, but ensures that _middlewareChain remains in a valid state if push_back() should fail to alloc
-
+			// Strong guarantee, ensures that _middlewareChain remains in a valid state if push_back() should fail to alloc
 			if (_middlewareChain.capacity() == _middlewareChain.size())
 			{
 				std::vector<Middleware> tmp(_middlewareChain);
@@ -28,11 +27,11 @@ namespace MuppetExpress {
 			// [&] Captures the variables in the scope by reference so they can be used in the lambda
 			std::function<void()> next = [&]() {
 				if (current < _middlewareChain.size()) {
-					Middleware& mw = _middlewareChain[current++]; // Get the current mw, then increment current so when next() is called it will be the next in line
-					mw(req, res, next); // Looks kind of like recursion, however its more like a callback for next() to be called in the mw to continue the chain
+					Middleware& mw = _middlewareChain[current++];
+					mw(req, res, next); // Pass next() to mw as a callback to continue the chain
 				}
 				else { 
-					endpointHandler(); // If there are no more middleware, call the endpointHandler
+					endpointHandler(); // If its the end of the chain, call the endpointHandler
 				}
 			};
 

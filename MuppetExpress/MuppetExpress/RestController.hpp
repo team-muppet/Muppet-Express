@@ -154,7 +154,8 @@ namespace MuppetExpress {
 
                 if constexpr (requires { Datastore<DTO>(_alloc); })
 				{
-                    dataStore_.emplace_back(newItem, _alloc.resource());
+                    DTO newItemCopy(newItem, _alloc);
+					dataStore_.push_back(std::move(newItemCopy));
 				}
 				else
 				{

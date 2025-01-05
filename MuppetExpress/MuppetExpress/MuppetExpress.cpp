@@ -26,16 +26,12 @@ struct EchoFunctor {
 
 // Main function
 int main(int argc, char** argv) {
-	std::array<std::byte, 1096> buffer; // 200 bytes of memory, remember SSO in pmr::string
+	std::array<std::byte, 4096*100> buffer; // 200 bytes of memory, remember SSO in pmr::string
 	StatsResource sr;
 
-	std::pmr::pool_options opts;
-	opts.max_blocks_per_chunk = 10;
-	opts.largest_required_pool_block = 4096;  // or some smaller/larger value
+	//std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), std::pmr::null_memory_resource() };
+	std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), &sr };
 
-	std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), std::pmr::null_memory_resource() };
-	//std::pmr::monotonic_buffer_resource mbr{ buffer.data(), buffer.size(), &sr };
-	std::pmr::synchronized_pool_resource spr(opts, &sr);
 
 	auto exceptionHandler = [](Request& req, Response& res, std::function<void()> routehandler) {
 		try {
@@ -127,7 +123,8 @@ int main(int argc, char** argv) {
 		}
 	});*/
 
-	RestController<Pokemon, std::vector> pokemonController(server, "/api/pokemon");
+	RestController<PmrPokemon, std::pmr::vector> pokemonController(server, "/api/pokemon", &mbr);
+	//RestController<Pokemon, std::vector> pokemonController(server, "/api/pokemon");
 
 	RestController<Person, std::list> personController(server, "/api/person");
 

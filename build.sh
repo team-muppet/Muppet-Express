@@ -9,10 +9,10 @@ PROJECT_DIR="MuppetExpress"
 SRC_DIR="MuppetExpress"
 EXECUTABLE_NAME="MuppetExpress"
 
-gnome-terminal -- bash -c "./fetchPokemonImages.sh"
-
 sudo apt update
 sudo apt install -y cmake gnome-terminal libboost-all-dev
+
+gnome-terminal -- bash -c "./fetchPokemonImages.sh"
 
 cd "$PROJECT_DIR"
 

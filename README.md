@@ -26,7 +26,7 @@ server.Use([](Request& req, Response& res, std::function<void()> next) {
 
 // Register routes
 server.MapGet("/", [](Request& req, Response& res) {
-		res.body() = "Hello World!";
+    res.body() = "Hello World!";
 });
 
 // Start the server

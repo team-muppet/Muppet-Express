@@ -19,14 +19,14 @@ Here’s how simple it is to get started:
 Server server(2000);
 
 // Add middleware
-server.use([](const Request& req, Response& res, Next next) {
+server.Use([](Request& req, Response& res, std::function<void()> next) {
     std::cout << "Middleware hit!" << std::endl;
     next();
 });
 
 // Register routes
-server.map("/hello", [](const Request& req, Response& res) {
-    res.send("Hello, World!");
+server.MapGet("/", [](Request& req, Response& res) {
+		res.body() = "Hello World!";
 });
 
 // Start the server
